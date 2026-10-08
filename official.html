@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>党政机关公文智能识别与排版工具</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Word (.docx) 解析库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- PDF 解析库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <style>
+        /* 引入标准公文字体库（依赖本地系统字体） */
+        @font-face { font-family: '方正小标宋简体'; src: local('方正小标宋简体'), local('FZXiaoBiaoSong-B05S'); }
+        @font-face { font-family: '公文仿宋'; src: local('仿宋_GB2312'), local('仿宋'), local('FangSong'); }
+        @font-face { font-family: '公文黑体'; src: local('黑体_GB2312'), local('黑体'), local('SimHei'); }
+        @font-face { font-family: '公文楷体'; src: local('楷体_GB2312'), local('楷体'), local('KaiTi'); }
+
+        /* A4 纸张页面设置 (GB/T 9704-2012 标准边距) */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding-top: 37mm;    /* 上边距 37mm */
+            padding-bottom: 35mm; /* 下边距 35mm */
+            padding-left: 28mm;   /* 左边距 28mm */
+            padding-right: 26mm;  /* 右边距 26mm */
+            box-sizing: border-box;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            color: #000;
+        }
+
+        /* 公文格式样式 */
+        .doc-redhead { font-family: '方正小标宋简体', 'SimSun', serif; color: #e50012; font-size: 40pt; text-align: center; letter-spacing: 2px; }
+        .doc-docnum { font-family: '公文仿宋', '仿宋', serif; font-size: 16pt; text-align: center; margin-top: 15px; margin-bottom: 5px; }
+        .doc-divider { border-bottom: 2px solid #e50012; margin-bottom: 20px; }
+        .doc-title { font-family: '方正小标宋简体', 'SimSun', serif; font-size: 22pt; text-align: center; line-height: 1.4; margin-bottom: 20px; }
+        .doc-target { font-family: '公文楷体', 'KaiTi', serif; font-size: 16pt; text-align: left; margin-bottom: 15px; }
+        
+        .doc-body {
+            font-family: '公文仿宋', 'FangSong', serif;
+            font-size: 16pt; /* 三号字 */
+            line-height: 28pt; /* 28pt 行距 */
+            text-align: justify;
+            text-justify: inter-ideograph;
+        }
+
+        .doc-body p {
+            text-indent: 2em;
+            margin-bottom: 0;
+        }
+
+        .doc-h1 { font-family: '公文黑体', 'SimHei', sans-serif; font-weight: normal; }
+        .doc-h2 { font-family: '公文楷体', 'KaiTi', serif; font-weight: bold; }
+
+        .doc-signature {
+            margin-top: 40px;
+            float: right;
+            text-align: center;
+            font-family: '公文仿宋', 'FangSong', serif;
+            font-size: 16pt;
+            padding-right: 20px;
+        }
+
+        @media print {
+            body { background: white; margin: 0; }
+            .no-print { display: none !important; }
+            .a4-page { box-shadow: none; margin: 0; page-break-after: always; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col md:flex-row">
+
+    <!-- 左侧控制面板 -->
+    <div class="w-full md:w-1/3 p-6 bg-white border-r border-slate-200 overflow-y-auto h-screen no-print space-y-4">
+        <h2 class="text-xl font-bold text-slate-800">公文在线排版系统</h2>
+
+        <!-- 🌟 新增：文档导入识别卡片 -->
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl space-y-2">
+            <label class="block text-sm font-bold text-blue-800">📂 导入文档智能识别 (Word / PDF / TXT)</label>
+            <p class="text-xs text-blue-600">上传已有的草稿文件，系统将自动识别并抽取发文红头、文号、标题与段落结构。</p>
+            <input type="file" id="importFileInput" accept=".docx,.pdf,.txt" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"/>
+            <p id="parseStatus" class="text-xs text-blue-700 font-medium"></p>
+        </div>
+        
+        <form id="docForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">发文机关标识（红头）</label>
+                <input type="text" id="inputRedhead" value="中共某某市委文件" class="mt-1 w-full p-2 border border-slate-300 rounded-md text-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">字号/年份</label>
+                    <input type="text" id="inputDocNum" value="某发〔2026〕15号" class="mt-1 w-full p-2 border border-slate-300 rounded-md text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">主送机关</label>
+                    <input type="text" id="inputTarget" value="各区县委，市委各部委：" class="mt-1 w-full p-2 border border-slate-300 rounded-md text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700">公文标题</label>
+                <input type="text" id="inputTitle" value="关于印发《进一步提升工作效能实施方案》的通知" class="mt-1 w-full p-2 border border-slate-300 rounded-md text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700">正文内容</label>
+                <textarea id="inputBody" rows="8" class="mt-1 w-full p-2 border border-slate-300 rounded-md font-mono text-sm">一、总体要求
+为全面贯彻落实上级决策部署，进一步优化工作流程，提高机关运行效率，结合我市实际，制定本方案。
+
+二、主要任务
+（一）推进数字化办公。全面推行无纸化会议和电子公文流转，压缩审批流转时限。
+（二）规范会议管理。控制会议数量与规模，严控精简各类务虚会议。
+
+三、保障措施
+各部门要切实加强组织领导，明确责任分工，确保各项任务落到实处。</textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">发文机关署名</label>
+                    <input type="text" id="inputOrg" value="中共某某市委" class="mt-1 w-full p-2 border border-slate-300 rounded-md text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">成文日期</label>
+                    <input type="text" id="inputDate" value="2026年9月15日" class="mt-1 w-full p-2 border border-slate-300 rounded-md text-sm">
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="button" onclick="window.print()" class="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700 font-medium transition">
+                    打印 / 导出 PDF
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 右侧 A4 预览区 -->
+    <div class="flex-1 p-8 overflow-y-auto h-screen flex justify-center items-start">
+        <div class="a4-page" id="previewPage">
+            <div id="viewRedhead" class="doc-redhead">中共某某市委文件</div>
+            <div id="viewDocNum" class="doc-docnum">某发〔2026〕15号</div>
+            <div class="doc-divider"></div>
+            <div id="viewTitle" class="doc-title">关于印发《进一步提升工作效能实施方案》的通知</div>
+            <div id="viewTarget" class="doc-target">各区县委，市委各部委：</div>
+            <div id="viewBody" class="doc-body"></div>
+            <div class="doc-signature">
+                <div id="viewOrg">中共某某市委</div>
+                <div id="viewDate">2026年9月15日</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        // 🌟 文档文件读取与识别入口
+        document.getElementById('importFileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const status = document.getElementById('parseStatus');
+            status.innerText = '正在解析识别文档内容...';
+
+            try {
+                let text = '';
+                if (file.name.endsWith('.docx')) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                    text = result.value;
+                } else if (file.name.endsWith('.pdf')) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        text += content.items.map(item => item.str).join(' ') + '\n';
+                    }
+                } else {
+                    text = await file.text();
+                }
+
+                autoClassifyDocument(text);
+                status.innerText = '解析识别成功！已自动填充并排版。';
+            } catch (err) {
+                console.error(err);
+                status.innerText = '解析失败：' + err.message;
+            }
+        });
+
+        // 🌟 智能结构分析提取规则
+        function autoClassifyDocument(fullText) {
+            const lines = fullText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            let bodyLines = [];
+            
+            lines.forEach((line, index) => {
+                // 1. 识别发文字号（如：国发〔2026〕1 号、某发〔2026〕15号）
+                if (/.*〔\d{4}〕\d+号/.test(line)) {
+                    document.getElementById('inputDocNum').value = line;
+                }
+                // 2. 识别红头标识
+                else if (line.endsWith('文件') || line.includes('委员会') || line.includes('办公厅') && index < 3) {
+                    if (!line.includes('关于') && !line.includes('通知')) {
+                        document.getElementById('inputRedhead').value = line;
+                    }
+                }
+                // 3. 识别主送机关（以“：”或“:”结尾且位于前部）
+                else if (/[：:]$/.test(line) && index < 6 && !line.includes('关于')) {
+                    document.getElementById('inputTarget').value = line;
+                }
+                // 4. 识别公文标题（包含“关于”、“通知”、“决定”、“批复”等关键字）
+                else if ((line.includes('关于') || line.includes('通知') || line.includes('方案') || line.includes('决定')) && line.length < 50 && index < 5) {
+                    document.getElementById('inputTitle').value = line;
+                }
+                // 5. 识别结尾落款日期（如：2026年9月15日）
+                else if (/^\d{4}年\d{1,2}月\d{1,2}日$/.test(line)) {
+                    document.getElementById('inputDate').value = line;
+                }
+                // 6. 其它行作为正文收集
+                else {
+                    bodyLines.push(line);
+                }
+            });
+
+            // 如果最后一行是非日期/标题短文本，尝试作为机构署名
+            if (bodyLines.length > 0 && bodyLines[bodyLines.length - 1].length < 20) {
+                const possibleOrg = bodyLines.pop();
+                document.getElementById('inputOrg').value = possibleOrg;
+            }
+
+            document.getElementById('inputBody').value = bodyLines.join('\n\n');
+            renderDocument();
+        }
+
+        // 视图渲染逻辑
+        function renderDocument() {
+            document.getElementById('viewRedhead').innerText = document.getElementById('inputRedhead').value;
+            document.getElementById('viewDocNum').innerText = document.getElementById('inputDocNum').value;
+            document.getElementById('viewTitle').innerText = document.getElementById('inputTitle').value;
+            document.getElementById('viewTarget').innerText = document.getElementById('inputTarget').value;
+            document.getElementById('viewOrg').innerText = document.getElementById('inputOrg').value;
+            document.getElementById('viewDate').innerText = document.getElementById('inputDate').value;
+
+            const rawBody = document.getElementById('inputBody').value;
+            const lines = rawBody.split('\n');
+            let htmlResult = '';
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+
+                if (/^[一二三四五六七八九十]+、/.test(line)) {
+                    htmlResult += `<p class="doc-h1">${line}</p>`;
+                } else if (/^（[一二三四五六七八九十]+）/.test(line)) {
+                    htmlResult += `<p class="doc-h2">${line}</p>`;
+                } else {
+                    htmlResult += `<p>${line}</p>`;
+                }
+            });
+
+            document.getElementById('viewBody').innerHTML = htmlResult;
+        }
+
+        document.querySelectorAll('#docForm input, #docForm textarea').forEach(element => {
+            element.addEventListener('input', renderDocument);
+        });
+
+        renderDocument();
+    </script>
+</body>
+</html>

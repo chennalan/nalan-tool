@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人智能记账与资产管理系统 - 登录版</title>
+    <!-- Tailwind CSS 样式库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (用于导出 Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- ================= 登录遮罩层 (未登录时显示) ================= -->
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <span class="text-4xl">🔐</span>
+                <h2 class="text-xl font-bold text-slate-900">记账系统身份认证</h2>
+                <p class="text-xs text-slate-500">请输入您的账号与密码以查看及编辑资产</p>
+            </div>
+
+            <form id="loginForm" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">账号用户名</label>
+                    <input type="text" id="loginUsername" required placeholder="请输入账号 (如: admin 或 user1)" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">登录密码</label>
+                    <input type="password" id="loginPassword" required placeholder="请输入密码" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition text-sm">
+                    安全登录系统
+                </button>
+            </form>
+
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] text-slate-500 space-y-1">
+                <p class="font-bold text-slate-700">💡 测试账号快速填写：</p>
+                <p>• 主理人账号: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-800">admin</code> / 密码: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-800">admin123</code></p>
+                <p>• 成员账号: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-800">user1</code> / 密码: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-800">123456</code></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 主系统界面 ================= -->
+    <!-- 顶部导航 -->
+    <header class="bg-slate-900 text-white shadow-md py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <span class="text-2xl">💰</span>
+            <div>
+                <h1 class="text-lg font-bold">个人智能记账与资产管理</h1>
+                <p class="text-xs text-slate-400">安全登录版 · 本地离线安全存储</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <!-- 当前登录身份标签 -->
+            <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
+                <span id="roleIcon">🛡️</span>
+                <div>
+                    <span class="text-slate-400">用户:</span>
+                    <span id="roleNameDisplay" class="font-bold text-white ml-1">-</span>
+                </div>
+            </div>
+
+            <!-- 操作按钮组 -->
+            <div class="flex space-x-2">
+                <button id="btnLogout" class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-2 rounded-lg font-medium shadow transition flex items-center space-x-1">
+                    <span>🔒</span><span>安全登出</span>
+                </button>
+                <button id="btnExportExcel" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-lg font-medium shadow transition flex items-center space-x-1">
+                    <span>📊</span><span>导出 Excel 账单</span>
+                </button>
+                <button id="btnClearData" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3.5 py-2 rounded-lg font-medium shadow transition flex items-center space-x-1">
+                    <span>🗑️</span><span>清空账本数据</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 核心财务统计大屏 (Dashboard) -->
+    <section class="max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">净资产总额</p>
+                <p id="statNetAsset" class="text-2xl font-bold text-slate-800 mt-1">¥0.00</p>
+            </div>
+            <span class="text-3xl p-2 bg-blue-50 text-blue-600 rounded-xl">💳</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">本月总支出</p>
+                <p id="statMonthExpense" class="text-2xl font-bold text-rose-600 mt-1">¥0.00</p>
+            </div>
+            <span class="text-3xl p-2 bg-rose-50 text-rose-600 rounded-xl">📉</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">本月总收入</p>
+                <p id="statMonthIncome" class="text-2xl font-bold text-emerald-600 mt-1">¥0.00</p>
+            </div>
+            <span class="text-3xl p-2 bg-emerald-50 text-emerald-600 rounded-xl">📈</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">本月结余</p>
+                <p id="statMonthBalance" class="text-2xl font-bold text-indigo-600 mt-1">¥0.00</p>
+            </div>
+            <span class="text-3xl p-2 bg-indigo-50 text-indigo-600 rounded-xl">🪙</span>
+        </div>
+    </section>
+
+    <!-- 主交互区 -->
+    <main class="max-w-7xl w-full mx-auto px-4 md:px-6 pb-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- 左侧：记账表单 -->
+        <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h2 class="text-base font-bold text-slate-800 flex items-center space-x-1.5">
+                    <span>✍️</span><span>记一笔</span>
+                </h2>
+                <!-- 收支类型切换按钮 -->
+                <div class="flex bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+                    <button type="button" id="typeExpenseBtn" class="px-3 py-1 rounded-md bg-rose-600 text-white shadow-sm transition">支出</button>
+                    <button type="button" id="typeIncomeBtn" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">收入</button>
+                </div>
+            </div>
+
+            <form id="recordForm" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">金额 (元) *</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">¥</span>
+                        <input type="number" id="amount" required step="0.01" min="0.01" placeholder="0.00" class="w-full pl-8 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">消费/收入分类 *</label>
+                        <select id="category" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                            <!-- 动态填充 -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">所属账户 *</label>
+                        <select id="account" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                            <!-- 动态填充 -->
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">记账日期 *</label>
+                    <input type="date" id="recordDate" required class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">备注说明</label>
+                    <input type="text" id="remark" placeholder="如：和朋友聚餐、购买文具等..." class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl shadow transition text-sm">
+                    保存支出账目
+                </button>
+            </form>
+        </div>
+
+        <!-- 右侧：Tab 内容区（收支明细流水 & 账户资产概览） -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+            <!-- Tab 切换 header -->
+            <div class="bg-slate-50 border-b border-slate-200 px-6 py-3 flex justify-between items-center text-xs font-semibold">
+                <div class="flex space-x-2">
+                    <button id="tabLogsBtn" class="px-4 py-2 rounded-lg bg-white shadow-sm border border-slate-200 text-blue-600">收支明细流水</button>
+                    <button id="tabAccountsBtn" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800">账户资产管理</button>
+                </div>
+                <!-- 搜索框 -->
+                <input type="text" id="searchInput" placeholder="🔍 搜索备注、分类、账户..." class="p-2 border border-slate-200 rounded-lg w-48 focus:ring-2 focus:ring-blue-500 outline-none font-normal">
+            </div>
+
+            <!-- Tab 1: 收支明细表格 -->
+            <div id="tabLogs" class="flex-1 overflow-auto p-4">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
+                            <th class="p-3">日期</th>
+                            <th class="p-3">类型</th>
+                            <th class="p-3">分类</th>
+                            <th class="p-3">账户</th>
+                            <th class="p-3">金额</th>
+                            <th class="p-3">备注</th>
+                            <th class="p-3 text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tab 2: 账户资产表格 -->
+            <div id="tabAccounts" class="flex-1 overflow-auto p-4 hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <p class="text-xs font-bold text-slate-700">我的资产账户列表：</p>
+                    <button id="btnAddAccount" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition">
+                        + 添加新账户
+                    </button>
+                </div>
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
+                            <th class="p-3">账户名称</th>
+                            <th class="p-3">账户类型</th>
+                            <th class="p-3">当前余额</th>
+                            <th class="p-3 text-right">快捷操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTableBody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        // --- 预设系统用户数据库 ---
+        const USERS_DB = {
+            'admin': { password: 'admin123', role: 'admin', name: '资产主理人-陈总' },
+            'user1': { password: '123456', role: 'member', name: '家庭成员-小林' }
+        };
+
+        // --- 默认配置与分类 ---
+        const CATEGORIES = {
+            expense: ['餐饮美食', '购物消费', '交通出行', '住房物业', '休闲娱乐', '医疗健康', '人情往来', '其他支出'],
+            income: ['工资薪金', '奖金补贴', '投资理财', '兼职外快', '其他收入']
+        };
+
+        // --- 本地状态初始化 ---
+        let currentUser = JSON.parse(localStorage.getItem('FINANCE_SESSION_USER')) || null;
+        let currentType = 'expense'; // 'expense' | 'income'
+        
+        let accounts = JSON.parse(localStorage.getItem('FINANCE_ACCOUNTS')) || [
+            { id: 'acc_1', name: '微信钱包', type: '电子钱包', balance: 1500.00 },
+            { id: 'acc_2', name: '支付宝', type: '电子钱包', balance: 3200.50 },
+            { id: 'acc_3', name: '工商银行卡', type: '银行储蓄', balance: 12500.00 },
+            { id: 'acc_4', name: '花呗/信用卡', type: '信用负债', balance: -850.00 }
+        ];
+
+        let logs = JSON.parse(localStorage.getItem('FINANCE_LOGS')) || [
+            { id: 1, date: '2026-06-01', type: 'income', category: '工资薪金', account: '工商银行卡', amount: 8000.00, remark: '6月全勤薪资' },
+            { id: 2, date: '2026-06-02', type: 'expense', category: '餐饮美食', account: '微信钱包', amount: 35.50, remark: '工作日午餐快餐' },
+            { id: 3, date: '2026-06-03', type: 'expense', category: '交通出行', account: '支付宝', amount: 18.00, remark: '地铁通勤' }
+        ];
+
+        // UI 节点
+        const loginOverlay = document.getElementById('loginOverlay');
+        const loginForm = document.getElementById('loginForm');
+        const btnLogout = document.getElementById('btnLogout');
+        const roleIcon = document.getElementById('roleIcon');
+        const roleNameDisplay = document.getElementById('roleNameDisplay');
+
+        const typeExpenseBtn = document.getElementById('typeExpenseBtn');
+        const typeIncomeBtn = document.getElementById('typeIncomeBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const recordForm = document.getElementById('recordForm');
+        const categorySelect = document.getElementById('category');
+        const accountSelect = document.getElementById('account');
+        const recordDateInput = document.getElementById('recordDate');
+
+        const tabLogsBtn = document.getElementById('tabLogsBtn');
+        const tabAccountsBtn = document.getElementById('tabAccountsBtn');
+        const tabLogs = document.getElementById('tabLogs');
+        const tabAccounts = document.getElementById('tabAccounts');
+        const searchInput = document.getElementById('searchInput');
+
+        // 设置默认日期为今天
+        recordDateInput.value = new Date().toISOString().slice(0, 10);
+
+        // --- 检查登录状态 ---
+        function checkAuth() {
+            if (!currentUser) {
+                loginOverlay.classList.remove('hidden');
+            } else {
+                loginOverlay.classList.add('hidden');
+                if (currentUser.role === 'admin') {
+                    roleIcon.innerText = '🛡️';
+                    roleNameDisplay.innerText = currentUser.name;
+                } else {
+                    roleIcon.innerText = '🧑‍💻';
+                    roleNameDisplay.innerText = currentUser.name;
+                }
+            }
+        }
+
+        // 登录表单提交拦截
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            if (USERS_DB[username] && USERS_DB[username].password === password) {
+                currentUser = {
+                    username,
+                    role: USERS_DB[username].role,
+                    name: USERS_DB[username].name
+                };
+                localStorage.setItem('FINANCE_SESSION_USER', JSON.stringify(currentUser));
+                loginForm.reset();
+                checkAuth();
+                renderAll();
+                alert(`🎉 登录成功，欢迎回来：${currentUser.name}！`);
+            } else {
+                alert('❌ 登录失败：账号或密码错误！请检查后重试。');
+            }
+        });
+
+        // 登出逻辑
+        btnLogout.addEventListener('click', () => {
+            if (confirm('确定要安全登出当前账号吗？')) {
+                localStorage.removeItem('FINANCE_SESSION_USER');
+                currentUser = null;
+                checkAuth();
+            }
+        });
+
+        // --- 切换收支类型 ---
+        typeExpenseBtn.addEventListener('click', () => {
+            currentType = 'expense';
+            typeExpenseBtn.className = 'px-3 py-1 rounded-md bg-rose-600 text-white shadow-sm transition';
+            typeIncomeBtn.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+            submitBtn.className = 'w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl shadow transition text-sm';
+            submitBtn.innerText = '保存支出账目';
+            updateCategoryOptions();
+        });
+
+        typeIncomeBtn.addEventListener('click', () => {
+            currentType = 'income';
+            typeIncomeBtn.className = 'px-3 py-1 rounded-md bg-emerald-600 text-white shadow-sm transition';
+            typeExpenseBtn.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+            submitBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow transition text-sm';
+            submitBtn.innerText = '保存收入账目';
+            updateCategoryOptions();
+        });
+
+        function updateCategoryOptions() {
+            categorySelect.innerHTML = '';
+            CATEGORIES[currentType].forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.innerText = cat;
+                categorySelect.appendChild(opt);
+            });
+        }
+
+        function updateAccountOptions() {
+            accountSelect.innerHTML = '';
+            accounts.forEach(acc => {
+                const opt = document.createElement('option');
+                opt.value = acc.name;
+                opt.innerText = `${acc.name} (余额: ¥${acc.balance.toFixed(2)})`;
+                accountSelect.appendChild(opt);
+            });
+        }
+
+        // --- 提交记账逻辑 ---
+        recordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('请先登录系统！');
+                checkAuth();
+                return;
+            }
+
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = categorySelect.value;
+            const accountName = accountSelect.value;
+            const date = recordDateInput.value;
+            const remark = document.getElementById('remark').value.trim() || '-';
+
+            // 查找对应账户并更新余额
+            const targetAccount = accounts.find(a => a.name === accountName);
+            if (!targetAccount) {
+                alert('❌ 所选账户不存在！');
+                return;
+            }
+
+            if (currentType === 'expense') {
+                targetAccount.balance -= amount;
+            } else {
+                targetAccount.balance += amount;
+            }
+
+            // 写入流水日志
+            const newLog = {
+                id: Date.now(),
+                date,
+                type: currentType,
+                category,
+                account: accountName,
+                amount,
+                remark,
+                operator: currentUser.name
+            };
+            logs.unshift(newLog);
+
+            // 保存并重新渲染
+            saveData();
+            renderAll();
+
+            // 重置表单
+            document.getElementById('amount').value = '';
+            document.getElementById('remark').value = '';
+            alert('✅ 记账成功！');
+        });
+
+        // --- 渲染全部数据 ---
+        function renderAll() {
+            renderDashboard();
+            renderLogsTable();
+            renderAccountsTable();
+            updateAccountOptions();
+        }
+
+        function renderDashboard() {
+            let totalNetAsset = 0;
+            let monthExpense = 0;
+            let monthIncome = 0;
+
+            const currentMonthPrefix = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+
+            accounts.forEach(acc => {
+                totalNetAsset += acc.balance;
+            });
+
+            logs.forEach(log => {
+                if (log.date.startsWith(currentMonthPrefix)) {
+                    if (log.type === 'expense') {
+                        monthExpense += log.amount;
+                    } else {
+                        monthIncome += log.amount;
+                    }
+                }
+            });
+
+            const monthBalance = monthIncome - monthExpense;
+
+            document.getElementById('statNetAsset').innerText = `¥${totalNetAsset.toFixed(2)}`;
+            document.getElementById('statMonthExpense').innerText = `¥${monthExpense.toFixed(2)}`;
+            document.getElementById('statMonthIncome').innerText = `¥${monthIncome.toFixed(2)}`;
+            document.getElementById('statMonthBalance').innerText = `¥${monthBalance.toFixed(2)}`;
+        }
+
+        function renderLogsTable() {
+            const tbody = document.getElementById('logsTableBody');
+            const keyword = searchInput.value.toLowerCase();
+            tbody.innerHTML = '';
+
+            logs.forEach(log => {
+                if (keyword && !log.category.toLowerCase().includes(keyword) && !log.account.toLowerCase().includes(keyword) && !log.remark.toLowerCase().includes(keyword)) {
+                    return;
+                }
+
+                const isExpense = log.type === 'expense';
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-500 font-mono text-[11px]">${log.date}</td>
+                    <td class="p-3">
+                        <span class="${isExpense ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'} px-2 py-0.5 rounded text-[10px] font-bold">
+                            ${isExpense ? '支出' : '收入'}
+                        </span>
+                    </td>
+                    <td class="p-3 font-semibold text-slate-800">${log.category}</td>
+                    <td class="p-3 text-slate-600">${log.account}</td>
+                    <td class="p-3 font-bold ${isExpense ? 'text-rose-600' : 'text-emerald-600'}">${isExpense ? '-' : '+'}${log.amount.toFixed(2)}</td>
+                    <td class="p-3 text-slate-500 text-[11px]">${log.remark} <span class="text-[9px] text-slate-400">(${log.operator || '系统'})</span></td>
+                    <td class="p-3 text-right">
+                        <button onclick="deleteLog(${log.id})" class="text-rose-500 hover:text-rose-700 font-semibold text-[11px]">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderAccountsTable() {
+            const tbody = document.getElementById('accountsTableBody');
+            tbody.innerHTML = '';
+
+            accounts.forEach(acc => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-900">${acc.name}</td>
+                    <td class="p-3 text-slate-500">${acc.type}</td>
+                    <td class="p-3 font-mono font-bold ${acc.balance < 0 ? 'text-rose-600' : 'text-slate-800'}">¥${acc.balance.toFixed(2)}</td>
+                    <td class="p-3 text-right">
+                        <button onclick="adjustBalance('${acc.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded text-[11px] font-semibold transition">调整余额</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 业务操作函数 ---
+        window.deleteLog = function(id) {
+            if (!confirm('确定要删除这条收支记录吗？')) return;
+            logs = logs.filter(l => l.id !== id);
+            saveData();
+            renderAll();
+        };
+
+        window.adjustBalance = function(accId) {
+            const acc = accounts.find(a => a.id === accId);
+            if (!acc) return;
+            const newBal = prompt(`请输入【${acc.name}】的最新实际余额：`, acc.balance);
+            if (newBal !== null && !isNaN(newBal)) {
+                acc.balance = parseFloat(newBal);
+                saveData();
+                renderAll();
+                alert('✅ 账户余额已校准！');
+            }
+        };
+
+        document.getElementById('btnAddAccount').addEventListener('click', () => {
+            const name = prompt('请输入新账户名称（如：交通银行、零钱罐）：');
+            if (!name) return;
+            const type = prompt('请输入账户类型（如：银行储蓄、电子钱包、信用负债）：', '储蓄卡');
+            const initBal = prompt('请输入初始余额：', '0.00');
+
+            if (name && !isNaN(initBal)) {
+                accounts.push({
+                    id: 'acc_' + Date.now(),
+                    name,
+                    type: type || '其他',
+                    balance: parseFloat(initBal)
+                });
+                saveData();
+                renderAll();
+                alert('✅ 新增账户成功！');
+            }
+        });
+
+        // --- Tab 切换与搜索 ---
+        searchInput.addEventListener('input', renderAll);
+
+        tabLogsBtn.addEventListener('click', () => {
+            tabLogs.classList.remove('hidden');
+            tabAccounts.classList.add('hidden');
+            tabLogsBtn.className = 'px-4 py-2 rounded-lg bg-white shadow-sm border border-slate-200 text-blue-600';
+            tabAccountsBtn.className = 'px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800';
+        });
+
+        tabAccountsBtn.addEventListener('click', () => {
+            tabAccounts.classList.remove('hidden');
+            tabLogs.classList.add('hidden');
+            tabAccountsBtn.className = 'px-4 py-2 rounded-lg bg-white shadow-sm border border-slate-200 text-blue-600';
+            tabLogsBtn.className = 'px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800';
+        });
+
+        // --- 持久化与 Excel 导出 ---
+        function saveData() {
+            localStorage.setItem('FINANCE_ACCOUNTS', JSON.stringify(accounts));
+            localStorage.setItem('FINANCE_LOGS', JSON.stringify(logs));
+        }
+
+        document.getElementById('btnExportExcel').addEventListener('click', () => {
+            if (logs.length === 0 && accounts.length === 0) {
+                alert('当前暂无账目数据可导出！');
+                return;
+            }
+
+            const exportLogs = logs.map(l => ({
+                '记账日期': l.date,
+                '类型': l.type === 'expense' ? '支出' : '收入',
+                '分类': l.category,
+                '账户': l.account,
+                '金额': l.amount,
+                '经办人': l.operator || '系统',
+                '备注': l.remark
+            }));
+
+            const exportAccounts = accounts.map(a => ({
+                '账户名称': a.name,
+                '账户类型': a.type,
+                '当前余额': a.balance
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const wsLogs = XLSX.utils.json_to_sheet(exportLogs);
+            const wsAcc = XLSX.utils.json_to_sheet(exportAccounts);
+
+            XLSX.utils.book_append_sheet(wb, wsLogs, "收支明细流水");
+            XLSX.utils.book_append_sheet(wb, wsAcc, "账户资产现状");
+
+            XLSX.writeFile(wb, `个人记账对账报表_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+
+        document.getElementById('btnClearData').addEventListener('click', () => {
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('❌ 权限不足：只有【资产主理人 (admin)】账号才可以清空账本数据！');
+                return;
+            }
+            if (confirm('⚠️ 警告：确定要彻底清空所有记账流水及账户资产数据吗？此操作无法撤销！')) {
+                localStorage.removeItem('FINANCE_ACCOUNTS');
+                localStorage.removeItem('FINANCE_LOGS');
+                location.reload();
+            }
+        });
+
+        // 页面初始化运行
+        checkAuth();
+        updateCategoryOptions();
+        renderAll();
+    </script>
+</body>
+</html>

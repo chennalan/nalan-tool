@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>咸鱼的个人主页 &amp; 工具箱</title>
+<meta name="description" content="咸鱼的个人主页与实用工具箱：公文标准排版、PDF 处理、音频解锁、图片转换、SEO 分析、题库练习、密码管理等在线小工具，即点即用。" />
+<meta name="theme-color" content="#2563eb" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%9F%3C/text%3E%3C/svg%3E" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['system-ui', '-apple-system', 'Segoe UI', 'PingFang SC',
+                 'Hiragino Sans GB', 'Microsoft YaHei', 'sans-serif'],
+        },
+        keyframes: {
+          'fade-up': {
+            '0%':   { opacity: '0', transform: 'translateY(10px)' },
+            '100%': { opacity: '1', transform: 'translateY(0)' },
+          },
+        },
+        animation: {
+          'fade-up': 'fade-up .35s ease-out both',
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  /* 弹窗显示控制：避免 hidden / flex 两个工具类的优先级冲突 */
+  #toolModal { display: none; }
+  #toolModal.is-open { display: flex; }
+
+  html.modal-open { overflow: hidden; }
+
+  /* 被分类筛选隐藏的卡片 */
+  .tool-card.is-hidden { display: none; }
+
+  /* 滚动条美化 */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1; border-radius: 9999px;
+    border: 2px solid transparent; background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; background-clip: content-box; }
+
+  /* 尊重用户的“减少动态效果”设置 */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      transition-duration: .001ms !important;
+    }
+  }
+</style>
+</head>
+
+<body id="top" class="bg-slate-50 font-sans text-slate-800 antialiased">
+
+  <!-- ============ 导航栏 ============ -->
+  <header class="sticky top-0 z-40 w-full border-b border-slate-900/10 bg-white/80 backdrop-blur">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-16 items-center justify-between gap-3">
+
+        <a href="#top" class="flex shrink-0 items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+          <span class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-lg font-bold text-white">M</span>
+          <span class="hidden text-lg font-bold text-slate-900 sm:block">我的个人主页</span>
+        </a>
+
+        <nav class="flex items-center gap-0.5 text-xs font-medium sm:gap-1 sm:text-sm">
+          <a href="#about" class="rounded-lg px-2.5 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-blue-600">关于我</a>
+          <a href="#tools" class="rounded-lg px-2.5 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-blue-600">工具箱</a>
+          <a href="#contact" class="rounded-lg px-2.5 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-blue-600">联系方式</a>
+
+          <!-- 公益事业：悬停/聚焦显示预览，点击在新窗口查看原图 -->
+          <div class="group relative">
+            <a href="zizhu.jpg" target="_blank" rel="noopener"
+               class="flex items-center gap-1 rounded-lg px-2.5 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-blue-600">
+              公益事业
+              <span class="hidden text-[10px] text-slate-400 sm:inline">▾</span>
+            </a>
+            <img src="zizhu.jpg" alt="公益事业图片预览" loading="lazy"
+                 class="pointer-events-none absolute right-0 top-full z-50 mt-2 w-64 max-w-[70vw] rounded-xl border border-slate-200 object-contain opacity-0 shadow-xl transition duration-300 group-hover:opacity-100 group-focus-within:opacity-100" />
+          </div>
+        </nav>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ 个人介绍 ============ -->
+  <section id="about" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+    <div class="flex flex-col items-center gap-8 md:flex-row md:gap-12">
+
+      <div class="relative shrink-0">
+        <div class="h-32 w-32 rounded-2xl bg-slate-200 p-1 shadow-xl md:h-40 md:w-40">
+          <img src="./avatar.jpg" alt="开发者头像" decoding="async"
+               class="h-full w-full rounded-xl bg-white object-cover">
+        </div>
+        <span class="absolute -bottom-2 -right-2 rounded-full border-2 border-white bg-emerald-500 px-2.5 py-1 text-xs font-medium text-white">在线</span>
+      </div>
+
+      <div class="space-y-4 text-center md:text-left">
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+          你好，我是 <span class="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text font-bold text-transparent">咸鱼</span> 👋
+        </h1>
+        <p class="max-w-2xl text-lg leading-relaxed text-slate-600">
+          一名热衷于探索高效生产力工具的全栈开发者。这里记录了我日常开发和积累的实用小工具，希望能帮你提升工作与学习效率。
+        </p>
+        <div class="flex flex-wrap justify-center gap-2 pt-2 md:justify-start">
+          <span class="rounded-md bg-slate-200/60 px-3 py-1 text-xs font-medium text-slate-700">公文标准排版</span>
+          <span class="rounded-md bg-slate-200/60 px-3 py-1 text-xs font-medium text-slate-700">PDF工具</span>
+          <span class="rounded-md bg-slate-200/60 px-3 py-1 text-xs font-medium text-slate-700">音频处理</span>
+          <span class="rounded-md bg-slate-200/60 px-3 py-1 text-xs font-medium text-slate-700">SEO优化</span>
+          <span class="rounded-md bg-slate-200/60 px-3 py-1 text-xs font-medium text-slate-700">题库系统</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 工具箱 ============ -->
+  <section id="tools" class="scroll-mt-20 border-t border-slate-200/80 bg-slate-100 py-12">
+    <div class="mx-auto max-w-6xl space-y-8 px-4 sm:px-6 lg:px-8">
+
+      <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900">实用小工具集</h2>
+          <p class="mt-1 text-sm text-slate-500">即点即用，支持在线预览或独立打开</p>
+        </div>
+
+        <!-- 分类筛选 -->
+        <div class="flex shrink-0 gap-1 overflow-x-auto rounded-full bg-white p-1 ring-1 ring-slate-200/80"
+             role="group" aria-label="工具分类筛选">
+          <button type="button" onclick="filterTools('all', this)" aria-pressed="true"
+                  class="tab-btn shrink-0 whitespace-nowrap rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition">全部</button>
+          <button type="button" onclick="filterTools('gov', this)" aria-pressed="false"
+                  class="tab-btn shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">公文相关</button>
+          <button type="button" onclick="filterTools('media', this)" aria-pressed="false"
+                  class="tab-btn shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">媒体与图像</button>
+          <button type="button" onclick="filterTools('dev', this)" aria-pressed="false"
+                  class="tab-btn shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">开发与安全</button>
+          <button type="button" onclick="filterTools('study', this)" aria-pressed="false"
+                  class="tab-btn shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">学习备考</button>
+        </div>
+      </div>
+
+      <!-- 工具卡片网格 -->
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
+        <!-- 1. 标准公文排版工具 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="gov">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-red-100 text-xl font-bold text-red-600">🏛️</div>
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">标准公文排版工具</h3>
+              <span class="shrink-0 rounded border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">GB/T 9704</span>
+            </div>
+            <p class="line-clamp-2 text-sm text-slate-500">符合国家标准党政机关公文格式，支持智能识别上传 DOCX/PDF/TXT 并一键转导出 PDF。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('official.html', '标准公文排版工具')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="official.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 2. 音乐格式解锁工具 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="media">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-purple-100 text-xl font-bold text-purple-600">🎧</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">音乐格式解锁工具</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">支持 NCM、QMC 等加密音频格式的纯前端本地快速解锁与还原。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('ncm.html', '音乐格式解锁工具')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="ncm.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 3. PDF 综合工具箱 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="media">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-orange-100 text-xl font-bold text-orange-600">📑</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">PDF 综合工具箱</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">全功能 PDF 在线处理工具，支持合并、拆分、转码与本地加密处理。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('pdf.html', 'PDF 综合工具箱')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="pdf.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 4. Google SEO 分析工具 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="dev">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-blue-100 text-xl font-bold text-blue-600">🚀</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">Google SEO 分析工具</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">提供 Meta 标签检测、关键词密度与网页 Search Engine 结构优化建议。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('seo.html', 'Google SEO 分析工具')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="seo.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 5. 题库练习平台 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="study">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-emerald-100 text-xl font-bold text-emerald-600">📖</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">题库练习平台</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">支持本地题库刷题与 GitHub 云端同步功能，便于日常复习与背题。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('tiku.html', '题库练习平台')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="tiku.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 6. 密码管理工具 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="dev">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-amber-100 text-xl font-bold text-amber-600">🔑</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">密码管理工具</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">强密码生成器与本地加密存储工具，保障账号资产与数据安全。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('password.html', '密码管理工具')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="password.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 7. 图床上传工具 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="media">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-cyan-100 text-xl font-bold text-cyan-600">🖼️</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">图床上传工具</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">快捷上传图片并即时生成 Markdown、HTML 和 Direct URL 链接。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('tuchuang.html', '图床上传工具')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="tuchuang.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 8. 图片转换工具 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="media">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-teal-100 text-xl font-bold text-teal-600">✨</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">图片转换工具</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">网页端高效的图片格式转换与简单处理工具。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('zhuan.html', '图片转换工具')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="zhuan.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 9. 在线音频编辑 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="media">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-indigo-100 text-xl font-bold text-indigo-600">🎵</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">在线音频编辑</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">网页端高效音频处理与剪辑工具。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('mp3.html', '在线音频编辑')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="mp3.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+        <!-- 10. 在线图片编辑 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="media">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-pink-100 text-xl font-bold text-pink-600">🎨</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">在线图片编辑</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">网页端高效图片裁剪、滤镜与在线图像微调工具。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('1.html', '在线图片编辑')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="1.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 页脚 / 联系方式 ============ -->
+  <footer id="contact" class="scroll-mt-20 border-t border-slate-200 bg-white py-12">
+    <div class="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
+      <h2 class="text-lg font-bold text-slate-900">联系我</h2>
+      <p class="mt-2 text-sm text-slate-500">有问题或合作意向，欢迎随时来信。</p>
+
+      <div class="mt-6 flex flex-wrap justify-center gap-3 text-sm">
+        <a href="mailto:chennalan0208@gmail.com"
+           class="rounded-full bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-700">✉️ 联系邮箱</a>
+        <a href="#" class="rounded-full bg-slate-100 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-200">GitHub</a>
+        <a href="#" class="rounded-full bg-slate-100 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-200">Gitee</a>
+      </div>
+
+      <p class="mt-8 text-xs text-slate-400">
+        © <span id="year">2026</span> My Workspaces. 保留所有权利。
+      </p>
+    </div>
+  </footer>
+
+  <!-- ============ 返回顶部 ============ -->
+  <button id="backTop" type="button" aria-label="返回顶部"
+          class="pointer-events-none fixed bottom-6 right-6 z-30 grid h-11 w-11 translate-y-2 place-items-center rounded-full bg-slate-900 text-white opacity-0 shadow-lg transition hover:bg-slate-700">
+    ↑
+  </button>
+
+  <!-- ============ 全屏预览弹窗 ============ -->
+  <div id="toolModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"
+       class="fixed inset-0 z-50 items-center justify-center bg-slate-900/60 p-3 backdrop-blur-sm sm:p-4">
+    <div class="flex h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+
+      <!-- 弹窗顶栏 -->
+      <div class="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-100 px-4 py-3 sm:px-6 sm:py-4">
+        <h3 id="modalTitle" class="truncate font-bold text-slate-800">工具预览</h3>
+        <div class="flex shrink-0 items-center gap-2">
+          <a id="modalExternalLink" href="#" target="_blank" rel="noopener"
+             class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50">新窗口打开 ↗</a>
+          <button type="button" data-modal-close aria-label="关闭预览"
+                  class="grid h-8 w-8 place-items-center rounded-lg text-lg font-bold text-slate-500 transition hover:bg-slate-200 hover:text-slate-700">✕</button>
+        </div>
+      </div>
+
+      <!-- iframe 嵌入 -->
+      <iframe id="toolIframe" title="工具预览" src="" referrerpolicy="no-referrer"
+              class="w-full flex-1 border-0"></iframe>
+    </div>
+  </div>
+
+  <!-- ============ 交互脚本 ============ -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ---------------- 弹窗预览 ---------------- */
+      const modal             = document.getElementById('toolModal');
+      const iframe            = document.getElementById('toolIframe');
+      const modalTitle        = document.getElementById('modalTitle');
+      const modalExternalLink = document.getElementById('modalExternalLink');
+      let lastFocusedEl = null;
+
+      function openModal(url, title) {
+        lastFocusedEl = document.activeElement;
+        modalTitle.textContent = title;
+        modalExternalLink.href = url;
+        iframe.src = url;
+
+        modal.classList.add('is-open');
+        document.documentElement.classList.add('modal-open');
+
+        const closeBtn = modal.querySelector('[data-modal-close]');
+        if (closeBtn) closeBtn.focus();
+      }
+
+      function closeModal() {
+        if (!modal.classList.contains('is-open')) return;
+
+        modal.classList.remove('is-open');
+        document.documentElement.classList.remove('modal-open');
+        iframe.src = 'about:blank';   // 停止页面内的音频 / 定时器
+
+        if (lastFocusedEl && typeof lastFocusedEl.focus === 'function') {
+          lastFocusedEl.focus();
+        }
+      }
+
+      // 点击遮罩关闭（用 mousedown 判定，避免框内选中文本后松手误关）
+      modal.addEventListener('mousedown', function (e) {
+        if (e.target === modal) closeModal();
+      });
+
+      // 任意带 data-modal-close 的元素
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-modal-close]')) closeModal();
+      });
+
+      // ESC 关闭
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' || e.key === 'Esc') closeModal();
+      });
+
+      /* ---------------- 分类筛选 ---------------- */
+      function filterTools(category, btnElement) {
+        const buttons = document.querySelectorAll('.tab-btn');
+
+        buttons.forEach(function (btn) {
+          const active = btn === btnElement;
+          btn.classList.toggle('bg-blue-600', active);
+          btn.classList.toggle('text-white', active);
+          btn.classList.toggle('shadow-sm', active);
+          btn.classList.toggle('text-slate-600', !active);
+          btn.classList.toggle('hover:bg-slate-100', !active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        document.querySelectorAll('.tool-card').forEach(function (card) {
+          const show = category === 'all' || card.dataset.category === category;
+          card.classList.toggle('is-hidden', !show);
+
+          if (show) {
+            // 重新触发入场动画
+            card.classList.remove('animate-fade-up');
+            void card.offsetWidth;          // 强制重排
+            card.classList.add('animate-fade-up');
+          }
+        });
+      }
+
+      /* ---------------- 返回顶部 ---------------- */
+      const backTop = document.getElementById('backTop');
+
+      function updateBackTop() {
+        const show = window.scrollY > 400;
+        backTop.classList.toggle('opacity-0', !show);
+        backTop.classList.toggle('translate-y-2', !show);
+        backTop.classList.toggle('pointer-events-none', !show);
+      }
+
+      window.addEventListener('scroll', updateBackTop, { passive: true });
+      backTop.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      updateBackTop();
+
+      /* ---------------- 页脚年份 ---------------- */
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      /* ---------------- 暴露给内联事件 ---------------- */
+      window.openModal   = openModal;
+      window.closeModal  = closeModal;
+      window.filterTools = filterTools;
+    })();
+  </script>
+
+</body>
+</html>

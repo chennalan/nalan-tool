@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片格式转换工具</title>
+    <!-- Tailwind CSS 样式库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- 顶栏 -->
+    <header class="bg-white border-b border-slate-200 py-4 px-6 shadow-sm flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">🔄</span>
+            <h1 class="text-xl font-bold text-slate-900">图片格式转换器</h1>
+        </div>
+        <span class="text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-medium">纯本地转换 · 安全无上传</span>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- 左侧：控制面板 -->
+        <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            
+            <!-- 1. 选择图片 -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">1. 选择原图</label>
+                <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-5 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition group">
+                    <span class="text-3xl mb-1 group-hover:scale-110 transition">📁</span>
+                    <span class="text-sm text-slate-600 font-medium">点击或拖拽上传图片</span>
+                    <span class="text-xs text-slate-400 mt-1">支持常见各种主流图片格式</span>
+                    <input type="file" id="imageInput" accept="image/*" class="hidden">
+                </label>
+            </div>
+
+            <!-- 2. 目标格式选择 -->
+            <div id="formatOptions" class="space-y-3 opacity-50 pointer-events-none transition-all">
+                <label class="block text-sm font-semibold text-slate-700">2. 转换为目标格式</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="fmt-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-blue-600 text-white shadow-sm transition" data-format="image/jpeg" data-ext="jpg">JPG / JPEG</button>
+                    <button class="fmt-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition" data-format="image/png" data-ext="png">PNG</button>
+                    <button class="fmt-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition" data-format="image/webp" data-ext="webp">WEBP</button>
+                    <button class="fmt-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition" data-format="image/avif" data-ext="avif">AVIF</button>
+                    <button class="fmt-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition" data-format="image/bmp" data-ext="bmp">BMP</button>
+                    <button class="fmt-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition" data-format="image/x-icon" data-ext="ico">ICO (图标)</button>
+                </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 3. 输出质量与背景填充设置 -->
+            <div id="qualityOptions" class="space-y-4 opacity-50 pointer-events-none transition-all">
+                <label class="block text-sm font-semibold text-slate-700">3. 转换参数</label>
+                
+                <!-- 压缩质量 -->
+                <div id="qualityBox" class="space-y-1 text-xs">
+                    <div class="flex justify-between text-slate-500">
+                        <span>输出画质 / 压缩率</span>
+                        <span id="valQuality">90%</span>
+                    </div>
+                    <input type="range" id="qualitySlider" min="10" max="100" value="90" class="w-full accent-blue-600">
+                </div>
+
+                <!-- 透明底处理（如 PNG 转 JPG 时填充颜色） -->
+                <div id="bgColorBox" class="space-y-1 text-xs">
+                    <span class="text-slate-500 block">透明底色填充 (针对非透明格式)</span>
+                    <div class="flex items-center space-x-2">
+                        <input type="color" id="bgColorPicker" value="#ffffff" class="w-8 h-8 rounded border border-slate-200 p-0.5 cursor-pointer">
+                        <span id="colorHex" class="font-mono text-slate-600">#ffffff (白色)</span>
+                    </div>
+                </div>
+
+                <!-- 预估文件大小 -->
+                <div class="flex justify-between items-center text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                    <span class="text-slate-500">转换后大小:</span>
+                    <span id="fileSizeEstimate" class="font-mono font-semibold text-slate-700">-</span>
+                </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 4. 下载按钮 -->
+            <button id="downloadBtn" disabled class="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white font-medium rounded-xl shadow-md transition flex items-center justify-center space-x-2 cursor-pointer disabled:cursor-not-allowed">
+                <span>📥 导出转换后的图片</span>
+            </button>
+        </div>
+
+        <!-- 右侧：图片信息与预览区 -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center items-center min-h-[400px] relative overflow-hidden">
+            
+            <div class="w-full h-full flex flex-col items-center justify-center rounded-xl overflow-auto p-2 bg-slate-100/50 border border-slate-200/60">
+                <canvas id="mainCanvas" class="max-w-full max-h-[500px] object-contain rounded-lg shadow-sm hidden"></canvas>
+                
+                <div id="placeholder" class="text-center text-slate-400 space-y-2">
+                    <span class="text-5xl block">🖼️</span>
+                    <p class="text-sm">请在左侧上传需要转换格式的图片</p>
+                </div>
+            </div>
+
+            <!-- 图片原信息提示 -->
+            <div id="imageMeta" class="mt-4 w-full flex justify-between text-xs text-slate-400 hidden">
+                <span id="metaOriginal">原格式: -</span>
+                <span id="metaSize">分辨率: -</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // DOM 引用
+        const imageInput = document.getElementById('imageInput');
+        const formatOptions = document.getElementById('formatOptions');
+        const qualityOptions = document.getElementById('qualityOptions');
+        const mainCanvas = document.getElementById('mainCanvas');
+        const placeholder = document.getElementById('placeholder');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const fmtBtns = document.querySelectorAll('.fmt-btn');
+
+        const qualitySlider = document.getElementById('qualitySlider');
+        const valQuality = document.getElementById('valQuality');
+        const qualityBox = document.getElementById('qualityBox');
+        const bgColorPicker = document.getElementById('bgColorPicker');
+        const fileSizeEstimate = document.getElementById('fileSizeEstimate');
+        const imageMeta = document.getElementById('imageMeta');
+        const metaOriginal = document.getElementById('metaOriginal');
+        const metaSize = document.getElementById('metaSize');
+
+        const ctx = mainCanvas.getContext('2d');
+
+        // 状态变量
+        let originalImg = null;
+        let originalFile = null;
+        let currentFormat = 'image/jpeg';
+        let currentExt = 'jpg';
+        let currentQuality = 0.9;
+        let currentBgColor = '#ffffff';
+
+        // 1. 文件选择
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            originalFile = file;
+            const url = URL.createObjectURL(file);
+            originalImg = new Image();
+            originalImg.onload = () => {
+                formatOptions.classList.remove('opacity-50', 'pointer-events-none');
+                qualityOptions.classList.remove('opacity-50', 'pointer-events-none');
+                mainCanvas.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                imageMeta.classList.remove('hidden');
+                downloadBtn.disabled = false;
+
+                // 显示原图元数据
+                metaOriginal.innerText = `原格式: ${file.type.split('/')[1]?.toUpperCase() || '未知'} (${(file.size/1024).toFixed(1)} KB)`;
+                metaSize.innerText = `分辨率: ${originalImg.width} x ${originalImg.height} px`;
+
+                render();
+            };
+            originalImg.src = url;
+        });
+
+        // 2. 核心渲染与画板重绘
+        function render() {
+            if (!originalImg) return;
+
+            // ICO 格式特殊处理尺寸 (最大 256x256)
+            let width = originalImg.width;
+            let height = originalImg.height;
+            if (currentExt === 'ico' && (width > 256 || height > 256)) {
+                width = 256;
+                height = 256;
+            }
+
+            mainCanvas.width = width;
+            mainCanvas.height = height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // 如果是非透明格式（如 JPG/BMP），用选择的底色填充背景
+            if (['image/jpeg', 'image/bmp'].includes(currentFormat)) {
+                ctx.fillStyle = currentBgColor;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            ctx.drawImage(originalImg, 0, 0, width, height);
+
+            // 更新预估大小
+            updateFileSizeEstimate();
+        }
+
+        // 3. 计算大小预估
+        function updateFileSizeEstimate() {
+            mainCanvas.toBlob((blob) => {
+                if (!blob) {
+                    fileSizeEstimate.innerText = '暂不支持该格式浏览器导出';
+                    return;
+                }
+                const sizeInKB = (blob.size / 1024).toFixed(1);
+                if (sizeInKB > 1024) {
+                    fileSizeEstimate.innerText = `~ ${(sizeInKB / 1024).toFixed(2)} MB`;
+                } else {
+                    fileSizeEstimate.innerText = `~ ${sizeInKB} KB`;
+                }
+            }, currentFormat, currentQuality);
+        }
+
+        // 4. 切换目标格式
+        fmtBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                fmtBtns.forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                    b.classList.add('hover:bg-slate-50');
+                });
+                btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                btn.classList.remove('hover:bg-slate-50');
+
+                currentFormat = btn.dataset.format;
+                currentExt = btn.dataset.ext;
+
+                // 控制画质滑块显隐（PNG/BMP/ICO 等无损格式不支持 quality 参数）
+                if (['image/png', 'image/bmp', 'image/x-icon'].includes(currentFormat)) {
+                    qualityBox.classList.add('opacity-40', 'pointer-events-none');
+                } else {
+                    qualityBox.classList.remove('opacity-40', 'pointer-events-none');
+                }
+
+                render();
+            });
+        });
+
+        // 5. 质量与背景色事件
+        qualitySlider.addEventListener('input', () => {
+            valQuality.innerText = qualitySlider.value + '%';
+            currentQuality = parseFloat(qualitySlider.value) / 100;
+            render();
+        });
+
+        bgColorPicker.addEventListener('input', (e) => {
+            currentBgColor = e.target.value;
+            document.getElementById('colorHex').innerText = `${currentBgColor}`;
+            render();
+        });
+
+        // 6. 导出下载
+        downloadBtn.addEventListener('click', () => {
+            if (!originalFile) return;
+
+            const originalName = originalFile.name.substring(0, originalFile.name.lastIndexOf('.')) || 'converted';
+            const fileName = `${originalName}.${currentExt}`;
+
+            // Canvas 直接导出文件并下载
+            mainCanvas.toBlob((blob) => {
+                if (!blob) {
+                    alert('当前浏览器暂时不支持导出该格式，请尝试更换为 JPG 或 WEBP。');
+                    return;
+                }
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+            }, currentFormat, currentQuality);
+        });
+    </script>
+</body>
+</html>

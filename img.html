@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 图像放大、增强与压缩工具</title>
+    <!-- Tailwind CSS 样式库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- 顶栏 -->
+    <header class="bg-white border-b border-slate-200 py-4 px-6 shadow-sm flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">✨</span>
+            <h1 class="text-xl font-bold text-slate-900">图像放大、增强 & 压缩工具</h1>
+        </div>
+        <span class="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-medium">纯本地离线处理 · 零上传</span>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- 左侧/上方：控制面板 -->
+        <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            
+            <!-- 1. 上传图片 -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">1. 选择图片</label>
+                <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-5 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition group">
+                    <span class="text-3xl mb-1 group-hover:scale-110 transition">🖼️</span>
+                    <span class="text-sm text-slate-600 font-medium">点击或拖拽上传图片</span>
+                    <span class="text-xs text-slate-400 mt-1">支持 PNG, JPG, WEBP</span>
+                    <input type="file" id="imageInput" accept="image/*" class="hidden">
+                </label>
+            </div>
+
+            <!-- 2. 分辨率倍数放大 -->
+            <div id="scaleOptions" class="space-y-3 opacity-50 pointer-events-none transition-all">
+                <label class="block text-sm font-semibold text-slate-700">2. 分辨率放大倍数</label>
+                <div class="grid grid-cols-4 gap-2">
+                    <button class="scale-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition" data-scale="1">1x (原图)</button>
+                    <button class="scale-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-blue-600 text-white shadow-sm transition" data-scale="2">2x 高清</button>
+                    <button class="scale-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition" data-scale="3">3x 超清</button>
+                    <button class="scale-btn py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition" data-scale="4">4x 极清</button>
+                </div>
+                <p id="resolutionInfo" class="text-[11px] text-slate-400 font-mono text-right">当前尺寸: -</p>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 3. 画质清晰度与增强调优 -->
+            <div id="enhanceOptions" class="space-y-4 opacity-50 pointer-events-none transition-all">
+                <div class="flex justify-between items-center">
+                    <label class="block text-sm font-semibold text-slate-700">3. 清晰度与色彩微调</label>
+                    <button id="resetEnhance" class="text-xs text-blue-600 hover:underline">重置</button>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <div class="flex justify-between text-slate-500 mb-1">
+                            <span>轮廓清晰度 / 锐化</span>
+                            <span id="valSharpen">20</span>
+                        </div>
+                        <input type="range" id="sharpSlider" min="0" max="100" value="20" class="w-full accent-blue-600">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-slate-500 mb-1">
+                            <span>对比度增强</span>
+                            <span id="valContrast">105%</span>
+                        </div>
+                        <input type="range" id="contrastSlider" min="50" max="150" value="105" class="w-full accent-blue-600">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-slate-500 mb-1">
+                            <span>亮度调优</span>
+                            <span id="valBrightness">100%</span>
+                        </div>
+                        <input type="range" id="brightSlider" min="50" max="150" value="100" class="w-full accent-blue-600">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 4. 图片压缩与导出设置 (新增功能) -->
+            <div id="compressOptions" class="space-y-3 opacity-50 pointer-events-none transition-all">
+                <label class="block text-sm font-semibold text-slate-700">4. 导出质量与压缩</label>
+                
+                <!-- 格式选择 -->
+                <div class="flex space-x-2 text-xs">
+                    <label class="flex-1 border border-slate-200 rounded-lg p-2 flex items-center justify-center space-x-1 cursor-pointer hover:bg-slate-50">
+                        <input type="radio" name="format" value="image/jpeg" checked class="accent-blue-600">
+                        <span class="font-medium">JPG (推荐压缩)</span>
+                    </label>
+                    <label class="flex-1 border border-slate-200 rounded-lg p-2 flex items-center justify-center space-x-1 cursor-pointer hover:bg-slate-50">
+                        <input type="radio" name="format" value="image/webp" class="accent-blue-600">
+                        <span class="font-medium">WEBP</span>
+                    </label>
+                    <label class="flex-1 border border-slate-200 rounded-lg p-2 flex items-center justify-center space-x-1 cursor-pointer hover:bg-slate-50">
+                        <input type="radio" name="format" value="image/png" class="accent-blue-600">
+                        <span class="font-medium">PNG (无损)</span>
+                    </label>
+                </div>
+
+                <!-- 质量滑块（仅对 JPG/WEBP 有效） -->
+                <div id="qualityBox" class="space-y-1 text-xs">
+                    <div class="flex justify-between text-slate-500">
+                        <span>压缩质量</span>
+                        <span id="valQuality">80%</span>
+                    </div>
+                    <input type="range" id="qualitySlider" min="10" max="100" value="80" class="w-full accent-blue-600">
+                </div>
+
+                <div class="flex justify-between items-center text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                    <span class="text-slate-500">预估文件体积:</span>
+                    <span id="fileSizeEstimate" class="font-mono font-semibold text-slate-700">-</span>
+                </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 5. 下载导出 -->
+            <button id="downloadBtn" disabled class="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white font-medium rounded-xl shadow-md transition flex items-center justify-center space-x-2 cursor-pointer disabled:cursor-not-allowed">
+                <span>📥 导出处理后的图片</span>
+            </button>
+        </div>
+
+        <!-- 右侧/下方：画布展示与预览区 -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center items-center min-h-[400px] relative overflow-hidden">
+            
+            <div class="w-full h-full flex items-center justify-center rounded-xl overflow-auto p-2 bg-slate-100/50 border border-slate-200/60">
+                <canvas id="mainCanvas" class="max-w-full max-h-[600px] object-contain rounded-lg shadow-sm hidden"></canvas>
+                
+                <div id="placeholder" class="text-center text-slate-400 space-y-2">
+                    <span class="text-5xl block">🪄</span>
+                    <p class="text-sm">请在左侧上传图片，开始画质提升与压缩处理</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // DOM 引用
+        const imageInput = document.getElementById('imageInput');
+        const scaleOptions = document.getElementById('scaleOptions');
+        const enhanceOptions = document.getElementById('enhanceOptions');
+        const compressOptions = document.getElementById('compressOptions');
+        const resolutionInfo = document.getElementById('resolutionInfo');
+        const mainCanvas = document.getElementById('mainCanvas');
+        const placeholder = document.getElementById('placeholder');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        const sharpSlider = document.getElementById('sharpSlider');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const brightSlider = document.getElementById('brightSlider');
+        const resetEnhance = document.getElementById('resetEnhance');
+        const scaleBtns = document.querySelectorAll('.scale-btn');
+
+        const qualitySlider = document.getElementById('qualitySlider');
+        const valQuality = document.getElementById('valQuality');
+        const qualityBox = document.getElementById('qualityBox');
+        const fileSizeEstimate = document.getElementById('fileSizeEstimate');
+        const formatRadios = document.querySelectorAll('input[name="format"]');
+
+        const ctx = mainCanvas.getContext('2d');
+
+        // 状态变量
+        let originalImg = null;
+        let currentScale = 2; 
+        let currentFormat = 'image/jpeg';
+        let currentQuality = 0.8;
+
+        // 1. 上传图片
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const url = URL.createObjectURL(file);
+            originalImg = new Image();
+            originalImg.onload = () => {
+                scaleOptions.classList.remove('opacity-50', 'pointer-events-none');
+                enhanceOptions.classList.remove('opacity-50', 'pointer-events-none');
+                compressOptions.classList.remove('opacity-50', 'pointer-events-none');
+                mainCanvas.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                downloadBtn.disabled = false;
+
+                render();
+            };
+            originalImg.src = url;
+        });
+
+        // 2. 锐化算法
+        function applySharpen(imageData, amount) {
+            if (amount <= 0) return imageData;
+            const data = imageData.data;
+            const w = imageData.width;
+            const h = imageData.height;
+            const mix = (amount / 100) * 0.5;
+
+            const copy = new Uint8ClampedArray(data);
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = (y * w + x) * 4;
+                    for (let c = 0; c < 3; c++) {
+                        const neighbors = (
+                            copy[((y - 1) * w + x) * 4 + c] +
+                            copy[((y + 1) * w + x) * 4 + c] +
+                            copy[(y * w + (x - 1)) * 4 + c] +
+                            copy[(y * w + (x + 1)) * 4 + c]
+                        );
+                        const sharpVal = copy[idx + c] * 5 - neighbors;
+                        data[idx + c] = Math.min(255, Math.max(0, copy[idx + c] * (1 - mix) + sharpVal * mix));
+                    }
+                }
+            }
+            return imageData;
+        }
+
+        // 3. 核心渲染
+        function render() {
+            if (!originalImg) return;
+
+            const targetWidth = Math.round(originalImg.width * currentScale);
+            const targetHeight = Math.round(originalImg.height * currentScale);
+
+            mainCanvas.width = targetWidth;
+            mainCanvas.height = targetHeight;
+            resolutionInfo.innerText = `输出尺寸: ${targetWidth} x ${targetHeight} px`;
+
+            ctx.clearRect(0, 0, targetWidth, targetHeight);
+
+            // 如果是 JPG 格式导出，绘制白色底层，防止 PNG 透明底变黑
+            if (currentFormat === 'image/jpeg') {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, targetWidth, targetHeight);
+            }
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // A. 对比度/亮度
+            const contrast = contrastSlider.value;
+            const brightness = brightSlider.value;
+            ctx.save();
+            ctx.filter = `contrast(${contrast}%) brightness(${brightness}%)`;
+            ctx.drawImage(originalImg, 0, 0, targetWidth, targetHeight);
+            ctx.restore();
+
+            // B. 锐化
+            const sharpVal = parseInt(sharpSlider.value);
+            if (sharpVal > 0) {
+                const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+                const sharpened = applySharpen(imgData, sharpVal);
+                ctx.putImageData(sharpened, 0, 0);
+            }
+
+            // C. 计算并更新文件体积估计
+            updateFileSizeEstimate();
+        }
+
+        // 4. 更新文件大小预估
+        function updateFileSizeEstimate() {
+            mainCanvas.toBlob((blob) => {
+                if (!blob) return;
+                const sizeInKB = (blob.size / 1024).toFixed(1);
+                if (sizeInKB > 1024) {
+                    fileSizeEstimate.innerText = `~ ${(sizeInKB / 1024).toFixed(2)} MB`;
+                } else {
+                    fileSizeEstimate.innerText = `~ ${sizeInKB} KB`;
+                }
+            }, currentFormat, currentQuality);
+        }
+
+        // 5. 倍数切换
+        scaleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                scaleBtns.forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                    b.classList.add('hover:bg-slate-50');
+                });
+                btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                btn.classList.remove('hover:bg-slate-50');
+
+                currentScale = parseFloat(btn.dataset.scale);
+                render();
+            });
+        });
+
+        // 6. 滤镜滑动事件
+        [sharpSlider, contrastSlider, brightSlider].forEach(slider => {
+            slider.addEventListener('input', () => {
+                document.getElementById('valSharpen').innerText = sharpSlider.value;
+                document.getElementById('valContrast').innerText = contrastSlider.value + '%';
+                document.getElementById('valBrightness').innerText = brightSlider.value + '%';
+                render();
+            });
+        });
+
+        resetEnhance.addEventListener('click', () => {
+            sharpSlider.value = 20;
+            contrastSlider.value = 105;
+            brightSlider.value = 100;
+            document.getElementById('valSharpen').innerText = '20';
+            document.getElementById('valContrast').innerText = '105%';
+            document.getElementById('valBrightness').innerText = '100%';
+            render();
+        });
+
+        // 7. 压缩格式与质量控制
+        formatRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentFormat = e.target.value;
+                // PNG 无损格式不支持 quality 参数，隐藏质量滑动条
+                if (currentFormat === 'image/png') {
+                    qualityBox.classList.add('opacity-40', 'pointer-events-none');
+                } else {
+                    qualityBox.classList.remove('opacity-40', 'pointer-events-none');
+                }
+                render();
+            });
+        });
+
+        qualitySlider.addEventListener('input', () => {
+            valQuality.innerText = qualitySlider.value + '%';
+            currentQuality = parseFloat(qualitySlider.value) / 100;
+            render();
+        });
+
+        // 8. 导出下载
+        downloadBtn.addEventListener('click', () => {
+            let ext = 'jpg';
+            if (currentFormat === 'image/png') ext = 'png';
+            if (currentFormat === 'image/webp') ext = 'webp';
+
+            const link = document.createElement('a');
+            link.download = `output-${mainCanvas.width}x${mainCanvas.height}.${ext}`;
+            link.href = mainCanvas.toDataURL(currentFormat, currentQuality);
+            link.click();
+        });
+    </script>
+</body>
+</html>

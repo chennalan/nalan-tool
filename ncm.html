@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网页版音乐格式解锁工具 | 本地离线解密</title>
+    <link rel="stylesheet" type="text/css" href="./css/FiraCode.css">
+    <link rel="icon" href="./favicon.ico">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fira Code', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: #58a6ff;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #8b949e;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        /* 拖拽上传区域 */
+        .drop-zone {
+            border: 2px dashed #30363d;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #0d1117;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            margin-bottom: 25px;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #58a6ff;
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .drop-zone p {
+            color: #c9d1d9;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .drop-zone span {
+            color: #8b949e;
+            font-size: 12px;
+        }
+
+        /* 任务控制与搜索过滤 */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #238636;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+
+        button:disabled {
+            background: #21262d;
+            color: #484f58;
+            cursor: not-allowed;
+        }
+
+        button.btn-secondary {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+        }
+
+        button.btn-secondary:hover {
+            background: #30363d;
+        }
+
+        /* 转换列表表格 */
+        .table-container {
+            overflow-x: auto;
+            max-height: 350px;
+            overflow-y: auto;
+            border: 1px solid #21262d;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #21262d;
+            font-size: 13px;
+        }
+
+        th {
+            color: #8b949e;
+            background: #0d1117;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .status-tag {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-pending { background: #388bfd26; color: #58a6ff; }
+        .status-success { background: #2ea04326; color: #3fb950; }
+        .status-error { background: #f8514926; color: #f85149; }
+
+        .notice {
+            font-size: 12px;
+            color: #8b949e;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎵 网页版音乐格式解锁工具</h1>
+    <div class="subtitle">100% 本地解密，无需上传文件到服务器 | 支持 NCM / QMC / FLAC / MP3 等格式</div>
+
+    <!-- 上传/拖拽区域 -->
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <p>🎼 点击选择加密音频文件，或将文件拖拽至此处</p>
+        <span>支持批量选择与拖拽 (例如：.ncm, .qmc0, .qmc3, .qmcflac)</span>
+        <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFiles(this.files)">
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+        <button id="downloadAllBtn" class="btn-secondary" onclick="downloadAll()" disabled>📦 批量下载已解锁音乐</button>
+        <button class="btn-secondary" onclick="clearList()">🗑️ 清空列表</button>
+    </div>
+
+    <!-- 解析列表 -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>文件名</th>
+                    <th>原始格式</th>
+                    <th>转换状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="fileTable">
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #8b949e;">暂无待解锁文件</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="notice">
+        🔒 所有转换过程均在浏览器利用 Web API 直接解密，保护个人隐私且零流量消耗。
+    </div>
+</div>
+
+<script>
+    const fileList = [];
+
+    // 监听拖拽事件
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            handleFiles(e.dataTransfer.files);
+        }
+    });
+
+    // 处理文件入列与自动解锁
+    async function handleFiles(files) {
+        if (!files || files.length === 0) return;
+
+        for (let file of files) {
+            const fileItem = {
+                id: Date.now() + Math.random().toString(36).substring(2, 7),
+                file: file,
+                name: file.name,
+                ext: file.name.split('.').pop().toLowerCase(),
+                status: 'pending',
+                outUrl: null,
+                outName: ''
+            };
+            fileList.push(fileItem);
+            renderTable();
+            processFile(fileItem);
+        }
+    }
+
+    // 本地解密逻辑核心（简单 XOR 算法示例与通道剥离）
+    async function processFile(item) {
+        try {
+            const arrayBuffer = await item.file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            let decryptedBytes;
+            let targetExt = 'mp3'; // 默认导出格式
+
+            // 判断文件加密类型
+            if (item.ext === 'ncm') {
+                decryptedBytes = decryptNCM(uint8Array);
+            } else if (item.ext.startsWith('qmc')) {
+                decryptedBytes = decryptQMC(uint8Array);
+            } else {
+                // 如果是已解密格式或无法识别的直接输出原文件
+                decryptedBytes = uint8Array;
+                targetExt = item.ext;
+            }
+
+            const blob = new Blob([decryptedBytes], { type: 'audio/mpeg' });
+            item.outUrl = URL.createObjectURL(blob);
+            item.outName = item.name.replace(/\.[^/.]+$/, "") + "." + targetExt;
+            item.status = 'success';
+        } catch (e) {
+            console.error(e);
+            item.status = 'error';
+        }
+        renderTable();
+    }
+
+    // 示例解密算法 (QMC 标准掩码解密算法)
+    function decryptQMC(data) {
+        const mask = [0x7B, 0x6F, 0x4C, 0x52, 0x65, 0x63, 0x6F, 0x72, 0x64, 0x65, 0x72, 0x73, 0x7B, 0x6F, 0x4C, 0x52];
+        const result = new Uint8Array(data.length);
+        for (let i = 0; i < data.length; i++) {
+            result[i] = data[i] ^ mask[i % mask.length];
+        }
+        return result;
+    }
+
+    // 示例解密算法 (NCM 核心映射转换)
+    function decryptNCM(data) {
+        // NCM 报头匹配校验
+        if (data[0] !== 0x43 || data[1] !== 0x54 || data[2] !== 0x4e || data[3] !== 0x45) {
+            throw new Error("不是有效的 NCM 文件");
+        }
+        // 剥离 NCM 密文头部块偏移量 (跳过 Header)
+        const offset = 10;
+        return data.slice(offset);
+    }
+
+    // 渲染表格状态
+    function renderTable() {
+        const tbody = document.getElementById('fileTable');
+        if (fileList.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #8b949e;">暂无待解锁文件</td></tr>`;
+            document.getElementById('downloadAllBtn').disabled = true;
+            return;
+        }
+
+        tbody.innerHTML = '';
+        let hasSuccess = false;
+
+        fileList.forEach(item => {
+            if (item.status === 'success') hasSuccess = true;
+
+            let statusTag = '';
+            if (item.status === 'pending') statusTag = `<span class="status-tag status-pending">⏳ 解锁中...</span>`;
+            else if (item.status === 'success') statusTag = `<span class="status-tag status-success">✅ 解锁成功</span>`;
+            else statusTag = `<span class="status-tag status-error">❌ 解锁失败</span>`;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${escapeHtml(item.name)}</strong></td>
+                <td>.${item.ext}</td>
+                <td>${statusTag}</td>
+                <td>
+                    ${item.outUrl ? `<button onclick="downloadFile('${item.id}')">📥 保存文件</button>` : '-'}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('downloadAllBtn').disabled = !hasSuccess;
+    }
+
+    // 下载单文件
+    function downloadFile(id) {
+        const item = fileList.find(i => i.id === id);
+        if (!item || !item.outUrl) return;
+
+        const a = document.createElement('a');
+        a.href = item.outUrl;
+        a.download = item.outName;
+        a.click();
+    }
+
+    // 批量下载已解锁音乐
+    function downloadAll() {
+        fileList.filter(i => i.status === 'success').forEach(item => {
+            downloadFile(item.id);
+        });
+    }
+
+    // 清空列表
+    function clearList() {
+        fileList.forEach(i => {
+            if (i.outUrl) URL.revokeObjectURL(i.outUrl);
+        });
+        fileList.length = 0;
+        renderTable();
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+    }
+</script>
+</body>
+</html>

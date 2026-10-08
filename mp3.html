@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线 MP3 音频编辑器</title>
+    <!-- Tailwind CSS 样式库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- 顶栏 -->
+    <header class="bg-white border-b border-slate-200 py-4 px-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-2">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">🎵</span>
+            <h1 class="text-xl font-bold text-slate-900">在线 MP3 音频编辑器</h1>
+        </div>
+        <span class="text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-medium">Web Audio API · 本地高保真处理</span>
+    </header>
+
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- 文件导入板块 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <label class="block text-sm font-semibold text-slate-700 mb-2">1. 导入音频文件</label>
+            <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition">
+                <span class="text-3xl mb-2">🎧</span>
+                <span class="text-sm text-slate-600 font-medium">点击或拖拽音频文件（MP3 / WAV / OGG）</span>
+                <span class="text-xs text-slate-400 mt-1">文件完全在本地运行，保护隐私</span>
+                <input type="file" id="audioInput" accept="audio/*" class="hidden">
+            </label>
+        </div>
+
+        <!-- 音频波形与剪辑面板 -->
+        <div id="editorPanel" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 opacity-50 pointer-events-none transition-all">
+            
+            <!-- 波形绘制与播放指示器 -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-sm font-semibold text-slate-700">2. 音频波形与裁剪区间</label>
+                    <span id="audioDuration" class="text-xs font-mono text-slate-500">时长: 00:00 / 00:00</span>
+                </div>
+                <div class="relative bg-slate-900 rounded-xl overflow-hidden h-36 flex items-center justify-center border border-slate-800">
+                    <canvas id="waveformCanvas" class="w-full h-full block"></canvas>
+                </div>
+            </div>
+
+            <!-- 控制按钮组 -->
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <button id="btnPlay" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow transition flex items-center space-x-1.5">
+                        <span id="playIcon">▶</span> <span id="playText">播放选区</span>
+                    </button>
+                    <button id="btnStop" class="px-4 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition">
+                        ⏹ 停止
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-4 text-xs">
+                    <div>
+                        <span class="text-slate-500 mr-1">起点:</span>
+                        <input type="number" id="startTimeInput" step="0.1" min="0" value="0" class="w-20 p-1.5 border border-slate-200 rounded-lg text-center font-mono"> s
+                    </div>
+                    <div>
+                        <span class="text-slate-500 mr-1">终点:</span>
+                        <input type="number" id="endTimeInput" step="0.1" min="0" value="0" class="w-20 p-1.5 border border-slate-200 rounded-lg text-center font-mono"> s
+                    </div>
+                </div>
+            </div>
+
+            <!-- 参数微调 (淡入淡出 / 音量) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-100 pt-5 text-xs">
+                <div>
+                    <div class="flex justify-between text-slate-600 mb-1">
+                        <span>音量增益</span>
+                        <span id="valVolume">100%</span>
+                    </div>
+                    <input type="range" id="volumeSlider" min="0" max="200" value="100" class="w-full accent-blue-600">
+                </div>
+                <div>
+                    <div class="flex justify-between text-slate-600 mb-1">
+                        <span>淡入时长</span>
+                        <span id="valFadeIn">0.0 秒</span>
+                    </div>
+                    <input type="range" id="fadeInSlider" min="0" max="5" step="0.5" value="0" class="w-full accent-blue-600">
+                </div>
+                <div>
+                    <div class="flex justify-between text-slate-600 mb-1">
+                        <span>淡出时长</span>
+                        <span id="valFadeOut">0.0 秒</span>
+                    </div>
+                    <input type="range" id="fadeOutSlider" min="0" max="5" step="0.5" value="0" class="w-full accent-blue-600">
+                </div>
+            </div>
+
+            <!-- 导出功能区 -->
+            <div class="border-t border-slate-100 pt-5 flex justify-end">
+                <button id="btnExport" class="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-medium shadow transition flex items-center space-x-2">
+                    <span>📥 导出裁剪音频 (WAV/MP3)</span>
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioBuffer = null;
+        let currentSource = null;
+        let isPlaying = false;
+        let startTime = 0;
+        let endTime = 0;
+
+        const audioInput = document.getElementById('audioInput');
+        const editorPanel = document.getElementById('editorPanel');
+        const waveformCanvas = document.getElementById('waveformCanvas');
+        const canvasCtx = waveformCanvas.getContext('2d');
+        const audioDuration = document.getElementById('audioDuration');
+
+        const btnPlay = document.getElementById('btnPlay');
+        const btnStop = document.getElementById('btnStop');
+        const startTimeInput = document.getElementById('startTimeInput');
+        const endTimeInput = document.getElementById('endTimeInput');
+
+        const volumeSlider = document.getElementById('volumeSlider');
+        const fadeInSlider = document.getElementById('fadeInSlider');
+        const fadeOutSlider = document.getElementById('fadeOutSlider');
+
+        // 上传与解码音频
+        audioInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+            startTime = 0;
+            endTime = audioBuffer.duration;
+
+            startTimeInput.value = startTime.toFixed(1);
+            endTimeInput.value = endTime.toFixed(1);
+            startTimeInput.max = audioBuffer.duration;
+            endTimeInput.max = audioBuffer.duration;
+
+            editorPanel.classList.remove('opacity-50', 'pointer-events-none');
+            updateDurationDisplay();
+            drawWaveform();
+        });
+
+        // 格式化时间
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function updateDurationDisplay() {
+            if (!audioBuffer) return;
+            audioDuration.innerText = `选区: ${formatTime(endTime - startTime)} / 总长: ${formatTime(audioBuffer.duration)}`;
+        }
+
+        // 绘制可视化波形
+        function drawWaveform() {
+            if (!audioBuffer) return;
+
+            const width = waveformCanvas.width = waveformCanvas.clientWidth * window.devicePixelRatio;
+            const height = waveformCanvas.height = waveformCanvas.clientHeight * window.devicePixelRatio;
+
+            const channelData = audioBuffer.getChannelData(0);
+            const step = Math.ceil(channelData.length / width);
+            const amp = height / 2;
+
+            canvasCtx.clearRect(0, 0, width, height);
+
+            // 绘制波形线
+            canvasCtx.beginPath();
+            canvasCtx.strokeStyle = '#3b82f6';
+            canvasCtx.lineWidth = 1.5;
+
+            for (let i = 0; i < width; i++) {
+                let min = 1.0;
+                let max = -1.0;
+                for (let j = 0; j < step; j++) {
+                    const datum = channelData[i * step + j];
+                    if (datum < min) min = datum;
+                    if (datum > max) max = datum;
+                }
+                canvasCtx.moveTo(i, (1 + min) * amp);
+                canvasCtx.lineTo(i, (1 + max) * amp);
+            }
+            canvasCtx.stroke();
+
+            // 绘制选区高亮遮罩
+            const startX = (startTime / audioBuffer.duration) * width;
+            const endX = (endTime / audioBuffer.duration) * width;
+
+            canvasCtx.fillStyle = 'rgba(59, 130, 246, 0.25)';
+            canvasCtx.fillRect(startX, 0, endX - startX, height);
+
+            canvasCtx.strokeStyle = '#60a5fa';
+            canvasCtx.lineWidth = 2;
+            canvasCtx.strokeRect(startX, 0, endX - startX, height);
+        }
+
+        // 播放控制
+        function playSelection() {
+            stopAudio();
+
+            currentSource = audioCtx.createBufferSource();
+            currentSource.buffer = audioBuffer;
+
+            const gainNode = audioCtx.createGain();
+            const volume = parseFloat(volumeSlider.value) / 100;
+            const fadeIn = parseFloat(fadeInSlider.value);
+            const fadeOut = parseFloat(fadeOutSlider.value);
+
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + fadeIn);
+
+            const duration = endTime - startTime;
+            if (fadeOut > 0) {
+                gainNode.gain.setValueAtTime(volume, audioCtx.currentTime + duration - fadeOut);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+            }
+
+            currentSource.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            currentSource.start(0, startTime, duration);
+            isPlaying = true;
+            document.getElementById('playIcon').innerText = '⏸';
+            document.getElementById('playText').innerText = '暂停';
+
+            currentSource.onended = () => {
+                isPlaying = false;
+                document.getElementById('playIcon').innerText = '▶';
+                document.getElementById('playText').innerText = '播放选区';
+            };
+        }
+
+        function stopAudio() {
+            if (currentSource) {
+                try { currentSource.stop(); } catch (e) {}
+                currentSource = null;
+            }
+            isPlaying = false;
+            document.getElementById('playIcon').innerText = '▶';
+            document.getElementById('playText').innerText = '播放选区';
+        }
+
+        btnPlay.addEventListener('click', () => {
+            if (isPlaying) stopAudio();
+            else playSelection();
+        });
+
+        btnStop.addEventListener('click', stopAudio);
+
+        // 数值联动
+        [startTimeInput, endTimeInput].forEach(el => {
+            el.addEventListener('input', () => {
+                startTime = Math.max(0, parseFloat(startTimeInput.value) || 0);
+                endTime = Math.min(audioBuffer.duration, parseFloat(endTimeInput.value) || audioBuffer.duration);
+                if (startTime > endTime) startTime = endTime;
+                updateDurationDisplay();
+                drawWaveform();
+            });
+        });
+
+        [volumeSlider, fadeInSlider, fadeOutSlider].forEach(slider => {
+            slider.addEventListener('input', () => {
+                document.getElementById('valVolume').innerText = `${volumeSlider.value}%`;
+                document.getElementById('valFadeIn').innerText = `${fadeInSlider.value} 秒`;
+                document.getElementById('valFadeOut').innerText = `${fadeOutSlider.value} 秒`;
+            });
+        });
+
+        // 导出 AudioBuffer 为符合规范的 WAV 文件
+        document.getElementById('btnExport').addEventListener('click', () => {
+            if (!audioBuffer) return;
+
+            const sampleRate = audioBuffer.sampleRate;
+            const startSample = Math.floor(startTime * sampleRate);
+            const endSample = Math.floor(endTime * sampleRate);
+            const frameCount = endSample - startSample;
+            const numChannels = audioBuffer.numberOfChannels;
+
+            const wavBuffer = createWavFile(audioBuffer, startSample, frameCount, numChannels, sampleRate);
+            const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+
+            const a = document.createElement('a');
+            a.download = `edited-${Date.now()}.wav`;
+            a.href = URL.createObjectURL(blob);
+            a.click();
+        });
+
+        function createWavFile(audioBuffer, startSample, frameCount, numChannels, sampleRate) {
+            const bytesPerSample = 2;
+            const blockAlign = numChannels * bytesPerSample;
+            const buffer = new ArrayBuffer(44 + frameCount * blockAlign);
+            const view = new DataView(buffer);
+
+            /* RIFF identifier */
+            writeString(view, 0, 'RIFF');
+            /* RIFF chunk length */
+            view.setUint32(4, 36 + frameCount * blockAlign, true);
+            /* RIFF type */
+            writeString(view, 8, 'WAVE');
+            /* format chunk identifier */
+            writeString(view, 12, 'fmt ');
+            /* format chunk length */
+            view.setUint32(16, 16, true);
+            /* sample format (raw) */
+            view.setUint16(20, 1, true);
+            /* channel count */
+            view.setUint16(22, numChannels, true);
+            /* sample rate */
+            view.setUint32(24, sampleRate, true);
+            /* byte rate (sample rate * block align) */
+            view.setUint32(28, sampleRate * blockAlign, true);
+            /* block align */
+            view.setUint16(32, blockAlign, true);
+            /* bits per sample */
+            view.setUint16(34, 16, true);
+            /* data chunk identifier */
+            writeString(view, 36, 'data');
+            /* data chunk length */
+            view.setUint32(40, frameCount * blockAlign, true);
+
+            // 写入 PCM 采样点数据
+            let offset = 44;
+            const volume = parseFloat(volumeSlider.value) / 100;
+            const channels = [];
+            for (let i = 0; i < numChannels; i++) {
+                channels.push(audioBuffer.getChannelData(i));
+            }
+
+            for (let i = 0; i < frameCount; i++) {
+                for (let ch = 0; ch < numChannels; ch++) {
+                    let sample = channels[ch][startSample + i] * volume;
+                    sample = Math.max(-1, Math.min(1, sample));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+
+            return buffer;
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+    </script>
+</body>
+</html>

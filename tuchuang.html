@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub 图床上传工具</title>
+    <link rel="stylesheet" type="text/css" href="./css/FiraCode.css">
+    <link rel="icon" href="./favicon.ico">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fira Code', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: #58a6ff;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .config-panel {
+            background: #0d1117;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #21262d;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .config-panel input {
+            grid-column: span 1;
+        }
+
+        .config-panel input.full-width {
+            grid-column: span 2;
+        }
+
+        input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #58a6ff;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus {
+            border-color: #58a6ff;
+        }
+
+        .upload-area {
+            border: 2px dashed #30363d;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #0d1117;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 25px;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #58a6ff;
+        }
+
+        .upload-area p {
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        .result-panel {
+            display: none;
+            background: #0d1117;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #21262d;
+        }
+
+        .result-item {
+            margin-bottom: 12px;
+        }
+
+        .result-item label {
+            display: block;
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 4px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            background: #238636;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+
+        button.btn-secondary {
+            background: #21262d;
+            border: 1px solid #30363d;
+        }
+
+        button.btn-secondary:hover {
+            background: #30363d;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .config-panel {
+                grid-template-columns: 1fr;
+            }
+            .config-panel input, .config-panel input.full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🖼️ GitHub 图床上传工具</h1>
+
+    <!-- ⚙️ 配置面板 (已设置默认用户名和仓库) -->
+    <div class="config-panel">
+        <input type="text" id="owner" placeholder="GitHub 用户名 (Owner)" value="chennalan">
+        <input type="text" id="repo" placeholder="仓库名 (Repo)" value="my-photo">
+        <input type="text" id="branch" placeholder="分支 (默认: main)">
+        <input type="text" id="path" placeholder="存储路径 (默认: img)">
+        <input type="password" id="token" class="full-width" placeholder="Personal Access Token (PAT 密钥)">
+    </div>
+
+    <!-- 📤 上传区域 -->
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+        <p>📷 点击选择图片，或拖拽图片到此处</p>
+        <p style="font-size: 12px; margin-top: 5px;">(支持剪贴板 Ctrl+V / Cmd+V 粘贴上传)</p>
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFile(this.files[0])">
+    </div>
+
+    <!-- 🔗 结果展示 -->
+    <div class="result-panel" id="resultPanel">
+        <img id="preview" class="preview-img" alt="预览图">
+        
+        <div class="result-item">
+            <label>Markdown 格式：</label>
+            <div class="input-group">
+                <input type="text" id="urlMarkdown" readonly>
+                <button class="btn-secondary" onclick="copyInput('urlMarkdown')">📋 复制</button>
+            </div>
+        </div>
+
+        <div class="result-item">
+            <label>jsDelivr CDN 加速链：</label>
+            <div class="input-group">
+                <input type="text" id="urlCdn" readonly>
+                <button class="btn-secondary" onclick="copyInput('urlCdn')">📋 复制</button>
+            </div>
+        </div>
+
+        <div class="result-item">
+            <label>GitHub 原始直链：</label>
+            <div class="input-group">
+                <input type="text" id="urlRaw" readonly>
+                <button class="btn-secondary" onclick="copyInput('urlRaw')">📋 复制</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const configKeys = ['owner', 'repo', 'branch', 'path', 'token'];
+
+    // 默认回显本地存储配置，若无本地配置则优先显示代码内置的默认值
+    window.addEventListener('DOMContentLoaded', () => {
+        configKeys.forEach(key => {
+            const val = localStorage.getItem(`gh_img_${key}`);
+            if (val) {
+                document.getElementById(key).value = val;
+            }
+        });
+
+        // 支持剪贴板粘贴上传
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    handleFile(item.getAsFile());
+                    break;
+                }
+            }
+        });
+    });
+
+    configKeys.forEach(key => {
+        document.getElementById(key).addEventListener('input', (e) => {
+            localStorage.setItem(`gh_img_${key}`, e.target.value.trim());
+        });
+    });
+
+    // 拖拽上传监听
+    const uploadArea = document.getElementById('uploadArea');
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    // 处理文件上传核心逻辑
+    async function handleFile(file) {
+        if (!file) return;
+
+        const owner = document.getElementById('owner').value.trim() || 'chennalan';
+        const repo = document.getElementById('repo').value.trim() || 'my-photo';
+        const branch = document.getElementById('branch').value.trim() || 'main';
+        const folder = document.getElementById('path').value.trim() || 'img';
+        const token = document.getElementById('token').value.trim();
+
+        if (!token) {
+            alert('请先填写你的 GitHub Personal Access Token (PAT 密钥)！');
+            return;
+        }
+
+        // 文件重命名逻辑：时间戳_随机数.后缀
+        const ext = file.name.split('.').pop();
+        const filename = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+        const filePath = folder ? `${folder}/${filename}` : filename;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            const base64Content = reader.result.split(',')[1];
+            
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
+            
+            uploadArea.innerHTML = `<p>⏳ 正在上传图片至 ${owner}/${repo}... </p>`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Upload image via Web Hub: ${filename}`,
+                        content: base64Content,
+                        branch: branch
+                    })
+                });
+
+                if (response.ok) {
+                    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+                    const cdnUrl = `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${filePath}`;
+                    const markdownUrl = `![${filename}](${cdnUrl})`;
+
+                    document.getElementById('preview').src = reader.result;
+                    document.getElementById('urlRaw').value = rawUrl;
+                    document.getElementById('urlCdn').value = cdnUrl;
+                    document.getElementById('urlMarkdown').value = markdownUrl;
+                    document.getElementById('resultPanel').style.display = 'block';
+
+                    alert('🎉 上传成功！');
+                } else {
+                    const errData = await response.json();
+                    alert(`上传失败: ${errData.message}`);
+                }
+            } catch (err) {
+                alert('网络连接错误或上传请求失败！');
+            } finally {
+                uploadArea.innerHTML = `
+                    <p>📷 点击选择图片，或拖拽图片到此处</p>
+                    <p style="font-size: 12px; margin-top: 5px;">(支持剪贴板 Ctrl+V / Cmd+V 粘贴上传)</p>
+                `;
+            }
+        };
+    }
+
+    function copyInput(id) {
+        const input = document.getElementById(id);
+        input.select();
+        navigator.clipboard.writeText(input.value);
+        alert('已复制到剪贴板！');
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全能在线图片处理工具箱</title>
+    <!-- Tailwind CSS 样式库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QRCode.js 二维码生成库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- 顶栏 -->
+    <header class="bg-white border-b border-slate-200 py-4 px-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-2">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">🛠️</span>
+            <h1 class="text-xl font-bold text-slate-900">在线图像处理工具箱</h1>
+        </div>
+        <span class="text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-medium">纯本地离线处理 · 保护隐私</span>
+    </header>
+
+    <!-- 导航 Tab 切换 -->
+    <div class="bg-white border-b border-slate-200">
+        <div class="max-w-6xl mx-auto flex space-x-1 px-4 overflow-x-auto text-sm font-medium">
+            <button class="tab-btn py-3 px-4 text-blue-600 border-b-2 border-blue-600 flex items-center space-x-1" data-tab="tab-enhance">
+                <span>✨</span><span>高清增强 & 压缩</span>
+            </button>
+            <button class="tab-btn py-3 px-4 text-slate-500 hover:text-slate-800 flex items-center space-x-1" data-tab="tab-edit">
+                <span>🎨</span><span>PS 高级编辑</span>
+            </button>
+            <button class="tab-btn py-3 px-4 text-slate-500 hover:text-slate-800 flex items-center space-x-1" data-tab="tab-convert">
+                <span>🔄</span><span>格式转换</span>
+            </button>
+            <button class="tab-btn py-3 px-4 text-slate-500 hover:text-slate-800 flex items-center space-x-1" data-tab="tab-qrcode">
+                <span>📱</span><span>二维码生成</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
+
+        <!-- TAB 1: 高清增强与压缩 -->
+        <div id="tab-enhance" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">1. 选择图片</label>
+                    <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition">
+                        <span class="text-2xl mb-1">🖼️</span>
+                        <span class="text-xs text-slate-600 font-medium">点击或拖拽上传</span>
+                        <input type="file" id="enhInput" accept="image/*" class="hidden">
+                    </label>
+                </div>
+
+                <div id="enhControls" class="space-y-4 opacity-50 pointer-events-none transition-all">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">2. 放大倍数</label>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button class="enh-scale-btn py-1.5 text-xs font-semibold rounded border border-slate-200 hover:bg-slate-50" data-scale="1">1x</button>
+                            <button class="enh-scale-btn py-1.5 text-xs font-semibold rounded border border-slate-200 bg-blue-600 text-white shadow-sm" data-scale="2">2x</button>
+                            <button class="enh-scale-btn py-1.5 text-xs font-semibold rounded border border-slate-200 hover:bg-slate-50" data-scale="3">3x</button>
+                            <button class="enh-scale-btn py-1.5 text-xs font-semibold rounded border border-slate-200 hover:bg-slate-50" data-scale="4">4x</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 text-xs">
+                        <label class="block font-semibold text-slate-700">3. 清晰度与色彩调整</label>
+                        <div class="flex justify-between text-slate-500"><span>锐化清晰</span><span id="valSharpen">20</span></div>
+                        <input type="range" id="sharpSlider" min="0" max="100" value="20" class="w-full accent-blue-600">
+                        <div class="flex justify-between text-slate-500"><span>对比度</span><span id="valContrast">105%</span></div>
+                        <input type="range" id="contrastSlider" min="50" max="150" value="105" class="w-full accent-blue-600">
+                    </div>
+
+                    <div class="space-y-2 text-xs">
+                        <label class="block font-semibold text-slate-700">4. 导出质量压缩</label>
+                        <div class="flex justify-between text-slate-500"><span>压缩质量</span><span id="valQuality">80%</span></div>
+                        <input type="range" id="qualitySlider" min="10" max="100" value="80" class="w-full accent-blue-600">
+                    </div>
+
+                    <div class="text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex justify-between">
+                        <span class="text-slate-500">预估大小:</span>
+                        <span id="enhSizeEstimate" class="font-mono font-semibold text-slate-700">-</span>
+                    </div>
+
+                    <button id="enhDownloadBtn" disabled class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white text-xs font-medium rounded-xl shadow transition">📥 导出画质增强图</button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center min-h-[380px] bg-slate-100/40">
+                <canvas id="enhCanvas" class="max-w-full max-h-[500px] object-contain rounded shadow-sm hidden"></canvas>
+                <div id="enhPlaceholder" class="text-center text-slate-400 space-y-1">
+                    <span class="text-4xl block">✨</span>
+                    <p class="text-xs">请在左侧上传图片以开始增强处理</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: PS 高级编辑功能 -->
+        <div id="tab-edit" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">1. 上传图像文件</label>
+                    <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition">
+                        <span class="text-2xl mb-1">🎨</span>
+                        <span class="text-xs text-slate-600 font-medium">点击或拖拽上传</span>
+                        <input type="file" id="editInput" accept="image/*" class="hidden">
+                    </label>
+                </div>
+
+                <div id="editControls" class="space-y-4 opacity-50 pointer-events-none transition-all">
+                    <!-- PS 图像调色板 -->
+                    <div class="space-y-2 text-xs">
+                        <label class="block font-semibold text-slate-700">2. PS 图像参数微调</label>
+
+                        <div class="flex justify-between text-slate-500"><span>亮度</span><span id="valBrightness">0</span></div>
+                        <input type="range" id="psBrightness" min="-100" max="100" value="0" class="w-full accent-blue-600">
+
+                        <div class="flex justify-between text-slate-500"><span>对比度</span><span id="valPsContrast">0</span></div>
+                        <input type="range" id="psContrast" min="-100" max="100" value="0" class="w-full accent-blue-600">
+
+                        <div class="flex justify-between text-slate-500"><span>饱和度</span><span id="valSaturate">100%</span></div>
+                        <input type="range" id="psSaturate" min="0" max="200" value="100" class="w-full accent-blue-600">
+
+                        <div class="flex justify-between text-slate-500"><span>色相旋转</span><span id="valHue">0deg</span></div>
+                        <input type="range" id="psHue" min="0" max="360" value="0" class="w-full accent-blue-600">
+                    </div>
+
+                    <!-- 变换与镜像 -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2">3. 几何变换</label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <button id="btnRotateLeft" class="py-2 border border-slate-200 rounded hover:bg-slate-50">↺ 向左 90°</button>
+                            <button id="btnRotateRight" class="py-2 border border-slate-200 rounded hover:bg-slate-50">↻ 向右 90°</button>
+                            <button id="btnFlipH" class="py-2 border border-slate-200 rounded hover:bg-slate-50">↔️ 水平镜像</button>
+                            <button id="btnFlipV" class="py-2 border border-slate-200 rounded hover:bg-slate-50">↕️ 垂直镜像</button>
+                        </div>
+                    </div>
+
+                    <!-- 自由标注画笔 -->
+                    <div class="space-y-2 text-xs">
+                        <label class="block font-semibold text-slate-700">4. 标注画笔工具</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="brushColor" value="#ef4444" class="w-8 h-8 rounded border p-0.5 cursor-pointer">
+                            <input type="range" id="brushSize" min="1" max="20" value="3" class="w-full accent-blue-600">
+                            <button id="btnClearCanvas" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] text-slate-600">清除标注</button>
+                        </div>
+                    </div>
+
+                    <button id="editDownloadBtn" disabled class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white text-xs font-medium rounded-xl shadow transition">📥 导出编辑后的图像</button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center min-h-[380px] bg-slate-100/40 relative overflow-hidden">
+                <canvas id="editCanvas" class="max-w-full max-h-[500px] object-contain rounded shadow-sm hidden cursor-crosshair"></canvas>
+                <div id="editPlaceholder" class="text-center text-slate-400 space-y-1">
+                    <span class="text-4xl block">🎨</span>
+                    <p class="text-xs">请上传需要修图或标注的图片</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: 格式转换 -->
+        <div id="tab-convert" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">1. 选择文件</label>
+                    <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition">
+                        <span class="text-2xl mb-1">📁</span>
+                        <span class="text-xs text-slate-600 font-medium">点击或拖拽上传</span>
+                        <input type="file" id="cvtInput" accept="image/*" class="hidden">
+                    </label>
+                </div>
+
+                <div id="cvtControls" class="space-y-4 opacity-50 pointer-events-none transition-all">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2">2. 转换为目标格式</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button class="cvt-fmt-btn py-2 text-xs font-semibold rounded border border-slate-200 bg-blue-600 text-white" data-format="image/jpeg" data-ext="jpg">JPG</button>
+                            <button class="cvt-fmt-btn py-2 text-xs font-semibold rounded border border-slate-200 hover:bg-slate-50" data-format="image/png" data-ext="png">PNG</button>
+                            <button class="cvt-fmt-btn py-2 text-xs font-semibold rounded border border-slate-200 hover:bg-slate-50" data-format="image/webp" data-ext="webp">WEBP</button>
+                            <button class="cvt-fmt-btn py-2 text-xs font-semibold rounded border border-slate-200 hover:bg-slate-50" data-format="image/bmp" data-ext="bmp">BMP</button>
+                            <button class="cvt-fmt-btn py-2 text-xs font-semibold rounded border border-slate-200 hover:bg-slate-50" data-format="image/x-icon" data-ext="ico">ICO</button>
+                        </div>
+                    </div>
+
+                    <button id="cvtDownloadBtn" disabled class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 text-white text-xs font-medium rounded-xl shadow transition">📥 转换并下载</button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center min-h-[380px] bg-slate-100/40">
+                <canvas id="cvtCanvas" class="max-w-full max-h-[500px] object-contain rounded shadow-sm hidden"></canvas>
+                <div id="cvtPlaceholder" class="text-center text-slate-400 space-y-1">
+                    <span class="text-4xl block">🔄</span>
+                    <p class="text-xs">请上传需要转换格式的图像文件</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: 二维码生成 -->
+        <div id="tab-qrcode" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">二维码内容</label>
+                    <textarea id="qrText" rows="4" placeholder="输入链接或纯文本..." class="w-full p-3 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">https://google.com</textarea>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <label class="block font-semibold text-slate-700">尺寸与配色</label>
+                    <div class="flex justify-between text-slate-500"><span>尺寸大小</span><span id="valQrSize">256 px</span></div>
+                    <input type="range" id="qrSizeSlider" min="128" max="512" step="32" value="256" class="w-full accent-blue-600">
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-slate-500 block mb-1">码颜色</span>
+                            <input type="color" id="qrDark" value="#000000" class="w-full h-8 rounded border p-0.5 cursor-pointer">
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block mb-1">背景色</span>
+                            <input type="color" id="qrLight" value="#ffffff" class="w-full h-8 rounded border p-0.5 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="qrDownloadBtn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl shadow transition">📥 导出二维码 PNG</button>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center min-h-[380px] bg-slate-100/40">
+                <div id="qrcodeBox" class="p-4 bg-white rounded-xl shadow border border-slate-200"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Tab 切换控制 ---
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                    t.classList.add('text-slate-500');
+                });
+                contents.forEach(c => c.classList.add('hidden'));
+
+                tab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+                tab.classList.remove('text-slate-500');
+                document.getElementById(tab.dataset.tab).classList.remove('hidden');
+            });
+        });
+
+        // --- 功能 1: 图像增强与放大 ---
+        const enhInput = document.getElementById('enhInput');
+        const enhControls = document.getElementById('enhControls');
+        const enhCanvas = document.getElementById('enhCanvas');
+        const enhPlaceholder = document.getElementById('enhPlaceholder');
+        const enhDownloadBtn = document.getElementById('enhDownloadBtn');
+        const sharpSlider = document.getElementById('sharpSlider');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const qualitySlider = document.getElementById('qualitySlider');
+        const enhSizeEstimate = document.getElementById('enhSizeEstimate');
+        const enhScaleBtns = document.querySelectorAll('.enh-scale-btn');
+
+        const enhCtx = enhCanvas.getContext('2d');
+        let enhImg = null;
+        let enhScale = 2;
+
+        enhInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            enhImg = new Image();
+            enhImg.onload = () => {
+                enhControls.classList.remove('opacity-50', 'pointer-events-none');
+                enhCanvas.classList.remove('hidden');
+                enhPlaceholder.classList.add('hidden');
+                enhDownloadBtn.disabled = false;
+                renderEnhance();
+            };
+            enhImg.src = url;
+        });
+
+        function applySharpen(imageData, amount) {
+            if (amount <= 0) return imageData;
+            const data = imageData.data, w = imageData.width, h = imageData.height;
+            const mix = (amount / 100) * 0.5;
+            const copy = new Uint8ClampedArray(data);
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = (y * w + x) * 4;
+                    for (let c = 0; c < 3; c++) {
+                        const neighbors = copy[((y - 1) * w + x) * 4 + c] + copy[((y + 1) * w + x) * 4 + c] + copy[(y * w + (x - 1)) * 4 + c] + copy[(y * w + (x + 1)) * 4 + c];
+                        const sharpVal = copy[idx + c] * 5 - neighbors;
+                        data[idx + c] = Math.min(255, Math.max(0, copy[idx + c] * (1 - mix) + sharpVal * mix));
+                    }
+                }
+            }
+            return imageData;
+        }
+
+        function renderEnhance() {
+            if (!enhImg) return;
+            const targetW = Math.round(enhImg.width * enhScale);
+            const targetH = Math.round(enhImg.height * enhScale);
+            enhCanvas.width = targetW;
+            enhCanvas.height = targetH;
+
+            enhCtx.clearRect(0, 0, targetW, targetH);
+            enhCtx.fillStyle = '#ffffff';
+            enhCtx.fillRect(0, 0, targetW, targetH);
+
+            enhCtx.imageSmoothingEnabled = true;
+            enhCtx.imageSmoothingQuality = 'high';
+
+            enhCtx.save();
+            enhCtx.filter = `contrast(${contrastSlider.value}%)`;
+            enhCtx.drawImage(enhImg, 0, 0, targetW, targetH);
+            enhCtx.restore();
+
+            const sharpVal = parseInt(sharpSlider.value);
+            if (sharpVal > 0) {
+                const imgData = enhCtx.getImageData(0, 0, targetW, targetH);
+                enhCtx.putImageData(applySharpen(imgData, sharpVal), 0, 0);
+            }
+
+            enhCanvas.toBlob((blob) => {
+                if (blob) enhSizeEstimate.innerText = `~ ${(blob.size / 1024).toFixed(1)} KB`;
+            }, 'image/jpeg', parseFloat(qualitySlider.value) / 100);
+        }
+
+        enhScaleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                enhScaleBtns.forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
+                btn.classList.add('bg-blue-600', 'text-white');
+                enhScale = parseFloat(btn.dataset.scale);
+                renderEnhance();
+            });
+        });
+
+        [sharpSlider, contrastSlider, qualitySlider].forEach(slider => {
+            slider.addEventListener('input', () => {
+                document.getElementById('valSharpen').innerText = sharpSlider.value;
+                document.getElementById('valContrast').innerText = contrastSlider.value + '%';
+                document.getElementById('valQuality').innerText = qualitySlider.value + '%';
+                renderEnhance();
+            });
+        });
+
+        enhDownloadBtn.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.download = `enhanced-${enhCanvas.width}x${enhCanvas.height}.jpg`;
+            a.href = enhCanvas.toDataURL('image/jpeg', parseFloat(qualitySlider.value) / 100);
+            a.click();
+        });
+
+        // --- 功能 2: PS 高级编辑与标注 ---
+        const editInput = document.getElementById('editInput');
+        const editControls = document.getElementById('editControls');
+        const editCanvas = document.getElementById('editCanvas');
+        const editPlaceholder = document.getElementById('editPlaceholder');
+        const editDownloadBtn = document.getElementById('editDownloadBtn');
+        const editCtx = editCanvas.getContext('2d');
+
+        const psBrightness = document.getElementById('psBrightness');
+        const psContrast = document.getElementById('psContrast');
+        const psSaturate = document.getElementById('psSaturate');
+        const psHue = document.getElementById('psHue');
+        const brushColor = document.getElementById('brushColor');
+        const brushSize = document.getElementById('brushSize');
+
+        let editImg = null;
+        let rotationDegree = 0;
+        let flipH = 1;
+        let flipV = 1;
+        let isDrawing = false;
+        let drawPaths = [];
+
+        editInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            editImg = new Image();
+            editImg.onload = () => {
+                editControls.classList.remove('opacity-50', 'pointer-events-none');
+                editCanvas.classList.remove('hidden');
+                editPlaceholder.classList.add('hidden');
+                editDownloadBtn.disabled = false;
+                rotationDegree = 0;
+                flipH = 1;
+                flipV = 1;
+                drawPaths = [];
+                renderEdit();
+            };
+            editImg.src = url;
+        });
+
+        function renderEdit() {
+            if (!editImg) return;
+
+            const isRotated = (rotationDegree / 90) % 2 !== 0;
+            const w = isRotated ? editImg.height : editImg.width;
+            const h = isRotated ? editImg.width : editImg.height;
+
+            editCanvas.width = w;
+            editCanvas.height = h;
+
+            editCtx.save();
+            editCtx.clearRect(0, 0, w, h);
+
+            editCtx.translate(w / 2, h / 2);
+            editCtx.rotate((rotationDegree * Math.PI) / 180);
+            editCtx.scale(flipH, flipV);
+
+            const brightVal = 100 + parseInt(psBrightness.value);
+            const contrastVal = 100 + parseInt(psContrast.value);
+            editCtx.filter = `brightness(${brightVal}%) contrast(${contrastVal}%) saturate(${psSaturate.value}%) hue-rotate(${psHue.value}deg)`;
+
+            editCtx.drawImage(editImg, -editImg.width / 2, -editImg.height / 2);
+            editCtx.restore();
+
+            // 绘制标注画笔路径
+            drawPaths.forEach(path => {
+                editCtx.beginPath();
+                editCtx.strokeStyle = path.color;
+                editCtx.lineWidth = path.size;
+                editCtx.lineCap = 'round';
+                editCtx.moveTo(path.points[0].x, path.points[0].y);
+                for (let i = 1; i < path.points.length; i++) {
+                    editCtx.lineTo(path.points[i].x, path.points[i].y);
+                }
+                editCtx.stroke();
+            });
+        }
+
+        // 绑定 PS 参数滑块
+        [psBrightness, psContrast, psSaturate, psHue].forEach(input => {
+            input.addEventListener('input', () => {
+                document.getElementById('valBrightness').innerText = psBrightness.value;
+                document.getElementById('valPsContrast').innerText = psContrast.value;
+                document.getElementById('valSaturate').innerText = psSaturate.value + '%';
+                document.getElementById('valHue').innerText = psHue.value + 'deg';
+                renderEdit();
+            });
+        });
+
+        // 旋转与翻转
+        document.getElementById('btnRotateLeft').addEventListener('click', () => { rotationDegree = (rotationDegree - 90 + 360) % 360; renderEdit(); });
+        document.getElementById('btnRotateRight').addEventListener('click', () => { rotationDegree = (rotationDegree + 90) % 360; renderEdit(); });
+        document.getElementById('btnFlipH').addEventListener('click', () => { flipH *= -1; renderEdit(); });
+        document.getElementById('btnFlipV').addEventListener('click', () => { flipV *= -1; renderEdit(); });
+
+        // 画笔标注支持
+        function getCanvasPos(e) {
+            const rect = editCanvas.getBoundingClientRect();
+            const scaleX = editCanvas.width / rect.width;
+            const scaleY = editCanvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        editCanvas.addEventListener('mousedown', (e) => {
+            if (!editImg) return;
+            isDrawing = true;
+            const pos = getCanvasPos(e);
+            drawPaths.push({ color: brushColor.value, size: parseInt(brushSize.value), points: [pos] });
+        });
+
+        editCanvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const pos = getCanvasPos(e);
+            drawPaths[drawPaths.length - 1].points.push(pos);
+            renderEdit();
+        });
+
+        window.addEventListener('mouseup', () => { isDrawing = false; });
+        document.getElementById('btnClearCanvas').addEventListener('click', () => { drawPaths = []; renderEdit(); });
+
+        editDownloadBtn.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.download = `ps-edited-${Date.now()}.png`;
+            a.href = editCanvas.toDataURL('image/png');
+            a.click();
+        });
+
+        // --- 功能 3: 格式转换 ---
+        const cvtInput = document.getElementById('cvtInput');
+        const cvtControls = document.getElementById('cvtControls');
+        const cvtCanvas = document.getElementById('cvtCanvas');
+        const cvtPlaceholder = document.getElementById('cvtPlaceholder');
+        const cvtDownloadBtn = document.getElementById('cvtDownloadBtn');
+        const cvtFmtBtns = document.querySelectorAll('.cvt-fmt-btn');
+        const cvtCtx = cvtCanvas.getContext('2d');
+
+        let cvtImg = null;
+        let cvtFormat = 'image/jpeg';
+        let cvtExt = 'jpg';
+
+        cvtInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            cvtImg = new Image();
+            cvtImg.onload = () => {
+                cvtControls.classList.remove('opacity-50', 'pointer-events-none');
+                cvtCanvas.classList.remove('hidden');
+                cvtPlaceholder.classList.add('hidden');
+                cvtDownloadBtn.disabled = false;
+                renderConvert();
+            };
+            cvtImg.src = url;
+        });
+
+        function renderConvert() {
+            if (!cvtImg) return;
+            cvtCanvas.width = cvtImg.width;
+            cvtCanvas.height = cvtImg.height;
+            cvtCtx.clearRect(0, 0, cvtCanvas.width, cvtCanvas.height);
+            if (cvtFormat === 'image/jpeg' || cvtFormat === 'image/bmp') {
+                cvtCtx.fillStyle = '#ffffff';
+                cvtCtx.fillRect(0, 0, cvtCanvas.width, cvtCanvas.height);
+            }
+            cvtCtx.drawImage(cvtImg, 0, 0);
+        }
+
+        cvtFmtBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                cvtFmtBtns.forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
+                btn.classList.add('bg-blue-600', 'text-white');
+                cvtFormat = btn.dataset.format;
+                cvtExt = btn.dataset.ext;
+                renderConvert();
+            });
+        });
+
+        cvtDownloadBtn.addEventListener('click', () => {
+            cvtCanvas.toBlob((blob) => {
+                if (!blob) { alert('当前浏览器不支持导出此格式'); return; }
+                const a = document.createElement('a');
+                a.download = `converted.${cvtExt}`;
+                a.href = URL.createObjectURL(blob);
+                a.click();
+            }, cvtFormat, 0.9);
+        });
+
+        // --- 功能 4: 二维码生成 ---
+        const qrText = document.getElementById('qrText');
+        const qrSizeSlider = document.getElementById('qrSizeSlider');
+        const qrDark = document.getElementById('qrDark');
+        const qrLight = document.getElementById('qrLight');
+        const qrcodeBox = document.getElementById('qrcodeBox');
+        const qrDownloadBtn = document.getElementById('qrDownloadBtn');
+
+        function renderQrCode() {
+            qrcodeBox.innerHTML = '';
+            if (!qrText.value.trim()) return;
+            new QRCode(qrcodeBox, {
+                text: qrText.value.trim(),
+                width: parseInt(qrSizeSlider.value),
+                height: parseInt(qrSizeSlider.value),
+                colorDark: qrDark.value,
+                colorLight: qrLight.value
+            });
+        }
+
+        [qrText, qrDark, qrLight].forEach(el => el.addEventListener('input', renderQrCode));
+        qrSizeSlider.addEventListener('input', () => {
+            document.getElementById('valQrSize').innerText = `${qrSizeSlider.value} px`;
+            renderQrCode();
+        });
+
+        qrDownloadBtn.addEventListener('click', () => {
+            const img = qrcodeBox.querySelector('img') || qrcodeBox.querySelector('canvas');
+            if (!img) return;
+            const a = document.createElement('a');
+            a.download = `qrcode.png`;
+            a.href = img.src || img.toDataURL('image/png');
+            a.click();
+        });
+
+        renderQrCode();
+    </script>
+</body>
+</html>

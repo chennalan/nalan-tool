@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Hub | 个人主页</title>
+    <link rel="stylesheet" type="text/css" href="./css/FiraCode.css">
+    <link rel="icon" href="./favicon.ico">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fira Code', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* 顶部时钟区域 */
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .clock {
+            font-size: 48px;
+            font-weight: bold;
+            color: #58a6ff;
+            letter-spacing: 2px;
+        }
+
+        .date {
+            font-size: 14px;
+            color: #8b949e;
+            margin-top: 5px;
+        }
+
+        /* 聚合搜索栏 */
+        .search-box {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 8px 12px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .search-box select {
+            background: #0d1117;
+            color: #58a6ff;
+            border: 1px solid #30363d;
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: #c9d1d9;
+            font-size: 16px;
+            outline: none;
+            width: 100%;
+            padding: 6px;
+        }
+
+        .search-box button {
+            background: #238636;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .search-box button:hover {
+            background: #2ea043;
+        }
+
+        /* 添加书签表单 */
+        .add-form {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .add-form input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .add-form button {
+            background: #21262d;
+            color: #58a6ff;
+            border: 1px solid #30363d;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .add-form button:hover {
+            background: #30363d;
+        }
+
+        /* 书签卡片网格 */
+        .bookmarks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .bookmark-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-decoration: none;
+            color: #c9d1d9;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .bookmark-card:hover {
+            transform: translateY(-2px);
+            border-color: #58a6ff;
+        }
+
+        .bookmark-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .bookmark-title {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .del-btn {
+            background: transparent;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .bookmark-card:hover .del-btn {
+            display: block;
+        }
+
+        .del-btn:hover {
+            color: #f85149;
+            background: rgba(248, 81, 73, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .add-form {
+                flex-direction: column;
+            }
+            .add-form input, .add-form button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 顶部时钟与日期 -->
+    <div class="header">
+        <div class="clock" id="clock">00:00:00</div>
+        <div class="date" id="date">YYYY年MM月DD日 星期X</div>
+    </div>
+
+    <!-- 聚合搜索框 -->
+    <div class="search-box">
+        <select id="searchEngine">
+            <option value="https://www.google.com/search?q=">Google</option>
+            <option value="https://www.bing.com/search?q=">Bing</option>
+            <option value="https://www.baidu.com/s?wd=">Baidu</option>
+            <option value="https://github.com/search?q=">GitHub</option>
+        </select>
+        <input type="text" id="searchInput" placeholder="输入搜索内容或网址..." autocomplete="off">
+        <button onclick="doSearch()">搜索</button>
+    </div>
+
+    <!-- 添加快捷书签表单 -->
+    <div class="add-form">
+        <input type="text" id="bmTitle" placeholder="网站名称 (如: GitHub)">
+        <input type="text" id="bmUrl" placeholder="网址 (如: https://github.com)">
+        <button onclick="addBookmark()">➕ 添加书签</button>
+    </div>
+
+    <!-- 快捷书签展示区 -->
+    <div class="bookmarks-grid" id="bookmarksGrid"></div>
+</div>
+
+<script>
+    // 默认书签预设
+    const defaultBookmarks = [
+        { id: 1, title: 'GitHub', url: 'https://github.com' },
+        { id: 2, title: 'Vercel', url: 'https://vercel.com' },
+        { id: 3, title: 'ChatGPT', url: 'https://chat.openai.com' },
+        { id: 4, title: 'Claude', url: 'https://claude.ai' }
+    ];
+
+    // 1. 时钟更新
+    function updateClock() {
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        const dateStr = now.toLocaleDateString('zh-CN', options);
+        
+        document.getElementById('clock').innerText = timeStr;
+        document.getElementById('date').innerText = dateStr;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 2. 搜索逻辑
+    function doSearch() {
+        const q = document.getElementById('searchInput').value.trim();
+        if (!q) return;
+        
+        if (q.startsWith('http://') || q.startsWith('https://')) {
+            window.open(q, '_blank');
+        } else {
+            const engine = document.getElementById('searchEngine').value;
+            window.open(engine + encodeURIComponent(q), '_blank');
+        }
+    }
+
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') doSearch();
+    });
+
+    // 3. 书签管理
+    function getBookmarks() {
+        const stored = localStorage.getItem('hub_bookmarks');
+        if (!stored) {
+            localStorage.setItem('hub_bookmarks', JSON.stringify(defaultBookmarks));
+            return defaultBookmarks;
+        }
+        return JSON.parse(stored);
+    }
+
+    function renderBookmarks() {
+        const grid = document.getElementById('bookmarksGrid');
+        const bookmarks = getBookmarks();
+        grid.innerHTML = '';
+
+        bookmarks.forEach(bm => {
+            const card = document.createElement('div');
+            card.className = 'bookmark-card';
+            card.innerHTML = `
+                <div class="bookmark-info" onclick="window.open('${bm.url}', '_blank')" style="cursor: pointer; flex: 1;">
+                    <span class="bookmark-title">📌 ${escapeHtml(bm.title)}</span>
+                </div>
+                <button class="del-btn" onclick="deleteBookmark(${bm.id})">✖</button>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function addBookmark() {
+        const title = document.getElementById('bmTitle').value.trim();
+        let url = document.getElementById('bmUrl').value.trim();
+
+        if (!title || !url) {
+            alert('请填写完整的名称和网址！');
+            return;
+        }
+
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+        }
+
+        const bookmarks = getBookmarks();
+        bookmarks.push({ id: Date.now(), title, url });
+        localStorage.setItem('hub_bookmarks', JSON.stringify(bookmarks));
+
+        document.getElementById('bmTitle').value = '';
+        document.getElementById('bmUrl').value = '';
+        renderBookmarks();
+    }
+
+    function deleteBookmark(id) {
+        let bookmarks = getBookmarks();
+        bookmarks = bookmarks.filter(bm => bm.id !== id);
+        localStorage.setItem('hub_bookmarks', JSON.stringify(bookmarks));
+        renderBookmarks();
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+    }
+
+    // 初始化渲染
+    renderBookmarks();
+</script>
+</body>
+</html>

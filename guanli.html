@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业级智能出入库管理系统 - 安全登录版</title>
+    <!-- Tailwind CSS 样式库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (用于导出 Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- ================= 登录遮罩层 (未登录时显示) ================= -->
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <span class="text-4xl">🔐</span>
+                <h2 class="text-xl font-bold text-slate-900">仓储系统身份认证</h2>
+                <p class="text-xs text-slate-500">请输入您的账号与密码以继续操作</p>
+            </div>
+
+            <form id="loginForm" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">账号用户名</label>
+                    <input type="text" id="loginUsername" required placeholder="请输入账号 (如: admin 或 staff1)" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">登录密码</label>
+                    <input type="password" id="loginPassword" required placeholder="请输入密码" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition text-sm">
+                    安全登录系统
+                </button>
+            </form>
+
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] text-slate-500 space-y-1">
+                <p class="font-bold text-slate-700">💡 测试账号快速填写：</p>
+                <p>• 管理员账号: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-800">admin</code> / 密码: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-800">admin123</code></p>
+                <p>• 员工账号: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-800">staff1</code> / 密码: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold text-slate-800">123456</code></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 主系统界面 ================= -->
+    <!-- 顶部导航 -->
+    <header class="bg-slate-900 text-white shadow-md py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <span class="text-2xl">📦</span>
+            <div>
+                <h1 class="text-lg font-bold">智能仓储出入库管理系统</h1>
+                <p class="text-xs text-slate-400">密码校验安全版 · 高效离线存储</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <!-- 当前登录身份标签 -->
+            <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
+                <span id="roleIcon">🛡️</span>
+                <div>
+                    <span class="text-slate-400">当前用户:</span>
+                    <span id="roleNameDisplay" class="font-bold text-white ml-1">-</span>
+                </div>
+            </div>
+
+            <!-- 操作按钮组 -->
+            <div class="flex space-x-2">
+                <button id="btnLogout" class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-2 rounded-lg font-medium shadow transition flex items-center space-x-1">
+                    <span>🔒</span><span>安全登出</span>
+                </button>
+                <button id="btnExportExcel" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-lg font-medium shadow transition flex items-center space-x-1">
+                    <span>📊</span><span>导出报表</span>
+                </button>
+                <button id="btnClearData" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3.5 py-2 rounded-lg font-medium shadow transition flex items-center space-x-1 admin-only">
+                    <span>🗑️</span><span>清空数据</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 核心统计面板 (Dashboard) -->
+    <section class="max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">物料种类总数</p>
+                <p id="statTotalItems" class="text-2xl font-bold text-slate-800 mt-1">0</p>
+            </div>
+            <span class="text-3xl p-2 bg-blue-50 text-blue-600 rounded-xl">🏷️</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">当前库存总量</p>
+                <p id="statTotalStock" class="text-2xl font-bold text-blue-600 mt-1">0</p>
+            </div>
+            <span class="text-3xl p-2 bg-indigo-50 text-indigo-600 rounded-xl">📦</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">累计入库件数</p>
+                <p id="statTotalIn" class="text-2xl font-bold text-emerald-600 mt-1">0</p>
+            </div>
+            <span class="text-3xl p-2 bg-emerald-50 text-emerald-600 rounded-xl">📥</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-500 font-medium">缺货/库存预警项</p>
+                <p id="statWarningCount" class="text-2xl font-bold text-amber-500 mt-1">0</p>
+            </div>
+            <span class="text-3xl p-2 bg-amber-50 text-amber-500 rounded-xl">⚠️</span>
+        </div>
+    </section>
+
+    <!-- 主交互区 -->
+    <main class="max-w-7xl w-full mx-auto px-4 md:px-6 pb-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- 左侧：登记表单 -->
+        <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h2 class="text-base font-bold text-slate-800 flex items-center space-x-1.5">
+                    <span>✍️</span><span>出入库登记</span>
+                </h2>
+                <!-- 类型切换按钮 -->
+                <div class="flex bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+                    <button id="typeInBtn" class="px-3 py-1 rounded-md bg-emerald-600 text-white shadow-sm transition">📥 入库</button>
+                    <button id="typeOutBtn" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">📤 出库</button>
+                </div>
+            </div>
+
+            <form id="recordForm" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">物品条码 / SKU Code *</label>
+                    <input type="text" id="sku" required placeholder="如：ITEM-8821" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">物品名称 *</label>
+                    <input type="text" id="itemName" required placeholder="如：无线蓝牙耳机" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">规格 / 类别</label>
+                        <input type="text" id="category" placeholder="如：数码产品" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">操作数量 *</label>
+                        <input type="number" id="quantity" required min="1" value="1" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">最低安全库存值</label>
+                        <input type="number" id="minStock" min="0" value="5" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">经办人 / 经手人 *</label>
+                        <input type="text" id="operator" required placeholder="系统自动代入" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" readonly>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">备注信息</label>
+                    <textarea id="remark" rows="2" placeholder="填写供应商、采购批次或出库客户等信息..." class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow transition">
+                    确认提交入库
+                </button>
+            </form>
+        </div>
+
+        <!-- 右侧：Tab 内容区（当前库存 & 历史流水） -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+            <!-- Tab 切换 header -->
+            <div class="bg-slate-50 border-b border-slate-200 px-6 py-3 flex justify-between items-center text-xs font-semibold">
+                <div class="flex space-x-2">
+                    <button id="tabStockBtn" class="px-4 py-2 rounded-lg bg-white shadow-sm border border-slate-200 text-blue-600">实时库存清单</button>
+                    <button id="tabLogsBtn" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800">出入库明细流水</button>
+                </div>
+                <!-- 搜索框 -->
+                <input type="text" id="searchInput" placeholder="🔍 搜索条码/物品/经办人..." class="p-2 border border-slate-200 rounded-lg w-48 focus:ring-2 focus:ring-blue-500 outline-none font-normal">
+            </div>
+
+            <!-- Tab 1: 实时库存表格 -->
+            <div id="tabStock" class="flex-1 overflow-auto p-4">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
+                            <th class="p-3">SKU 条码</th>
+                            <th class="p-3">物品名称</th>
+                            <th class="p-3">类别</th>
+                            <th class="p-3">当前库存</th>
+                            <th class="p-3">安全警戒值</th>
+                            <th class="p-3">库存状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTableBody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tab 2: 出入库历史流水 -->
+            <div id="tabLogs" class="flex-1 overflow-auto p-4 hidden">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
+                            <th class="p-3">时间</th>
+                            <th class="p-3">类型</th>
+                            <th class="p-3">SKU</th>
+                            <th class="p-3">物品</th>
+                            <th class="p-3">变动数量</th>
+                            <th class="p-3">经办人</th>
+                            <th class="p-3">备注</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody" class="divide-y divide-slate-100 text-slate-700 font-mono">
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        // --- 预设系统用户数据库 ---
+        const USERS_DB = {
+            'admin': { password: 'admin123', role: 'admin', name: '库房主管-张经理' },
+            'staff1': { password: '123456', role: 'staff', name: '仓管员-李小明' },
+            'staff2': { password: '123456', role: 'staff', name: '仓管员-王芳' }
+        };
+
+        // --- 核心状态与本地存储初始化 ---
+        let currentUser = JSON.parse(localStorage.getItem('WMS_SESSION_USER')) || null;
+        let currentType = 'IN'; // 'IN' | 'OUT'
+        let inventory = JSON.parse(localStorage.getItem('WMS_INVENTORY')) || {};
+        let logs = JSON.parse(localStorage.getItem('WMS_LOGS')) || [];
+
+        // UI 节点
+        const loginOverlay = document.getElementById('loginOverlay');
+        const loginForm = document.getElementById('loginForm');
+        const btnLogout = document.getElementById('btnLogout');
+
+        const typeInBtn = document.getElementById('typeInBtn');
+        const typeOutBtn = document.getElementById('typeOutBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const recordForm = document.getElementById('recordForm');
+
+        const tabStockBtn = document.getElementById('tabStockBtn');
+        const tabLogsBtn = document.getElementById('tabLogsBtn');
+        const tabStock = document.getElementById('tabStock');
+        const tabLogs = document.getElementById('tabLogs');
+        const searchInput = document.getElementById('searchInput');
+
+        const roleIcon = document.getElementById('roleIcon');
+        const roleNameDisplay = document.getElementById('roleNameDisplay');
+        const operatorInput = document.getElementById('operator');
+
+        // --- 检查登录状态 ---
+        function checkAuth() {
+            if (!currentUser) {
+                loginOverlay.classList.remove('hidden');
+            } else {
+                loginOverlay.classList.add('hidden');
+                operatorInput.value = currentUser.name;
+                if (currentUser.role === 'admin') {
+                    roleIcon.innerText = '🛡️';
+                    roleNameDisplay.innerText = `管理员 (${currentUser.name})`;
+                    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+                } else {
+                    roleIcon.innerText = '🧑‍💻';
+                    roleNameDisplay.innerText = `员工 (${currentUser.name})`;
+                    document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+                }
+            }
+        }
+
+        // 登录表单提交拦截
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            if (USERS_DB[username] && USERS_DB[username].password === password) {
+                currentUser = {
+                    username,
+                    role: USERS_DB[username].role,
+                    name: USERS_DB[username].name
+                };
+                localStorage.setItem('WMS_SESSION_USER', JSON.stringify(currentUser));
+                loginForm.reset();
+                checkAuth();
+                renderAll();
+                alert(`🎉 登录成功，欢迎回来：${currentUser.name}！`);
+            } else {
+                alert('❌ 登录失败：账号或密码错误！请检查后重试。');
+            }
+        });
+
+        // 登出逻辑
+        btnLogout.addEventListener('click', () => {
+            if (confirm('确定要安全退出当前账号吗？')) {
+                localStorage.removeItem('WMS_SESSION_USER');
+                currentUser = null;
+                checkAuth();
+            }
+        });
+
+        // --- 切换出库 / 入库模式 ---
+        typeInBtn.addEventListener('click', () => {
+            currentType = 'IN';
+            typeInBtn.className = 'px-3 py-1 rounded-md bg-emerald-600 text-white shadow-sm transition';
+            typeOutBtn.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+            submitBtn.className = 'w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow transition';
+            submitBtn.innerText = '确认提交入库';
+        });
+
+        typeOutBtn.addEventListener('click', () => {
+            currentType = 'OUT';
+            typeOutBtn.className = 'px-3 py-1 rounded-md bg-rose-600 text-white shadow-sm transition';
+            typeInBtn.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+            submitBtn.className = 'w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl shadow transition';
+            submitBtn.innerText = '确认提交出库';
+        });
+
+        // 自动联动填充已存在的物品名称及类别
+        document.getElementById('sku').addEventListener('blur', (e) => {
+            const sku = e.target.value.trim();
+            if (inventory[sku]) {
+                document.getElementById('itemName').value = inventory[sku].name;
+                document.getElementById('category').value = inventory[sku].category;
+                document.getElementById('minStock').value = inventory[sku].minStock;
+            }
+        });
+
+        // --- 提交出入库逻辑 ---
+        recordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('请先登录系统！');
+                checkAuth();
+                return;
+            }
+
+            const sku = document.getElementById('sku').value.trim();
+            const name = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('category').value.trim() || '通用';
+            const qty = parseInt(document.getElementById('quantity').value);
+            const minStock = parseInt(document.getElementById('minStock').value) || 0;
+            const remark = document.getElementById('remark').value.trim();
+            const operator = currentUser.name; // 强制代入当前登录账号名称
+
+            if (!inventory[sku] && currentType === 'OUT') {
+                alert('❌ 错误：库存中不存在该 SKU，无法执行出库！');
+                return;
+            }
+
+            if (currentType === 'OUT' && (inventory[sku].stock < qty)) {
+                alert(`❌ 出库失败：库存不足！当前库存仅剩 ${inventory[sku].stock} 件。`);
+                return;
+            }
+
+            // 更新库存
+            if (!inventory[sku]) {
+                inventory[sku] = { sku, name, category, stock: 0, minStock };
+            }
+
+            if (currentType === 'IN') {
+                inventory[sku].stock += qty;
+            } else {
+                inventory[sku].stock -= qty;
+            }
+            inventory[sku].minStock = minStock;
+
+            // 增加流水日志
+            const logEntry = {
+                id: Date.now(),
+                time: new Date().toLocaleString(),
+                type: currentType,
+                sku,
+                name,
+                qty,
+                operator,
+                remark
+            };
+            logs.unshift(logEntry);
+
+            // 保存与更新
+            saveData();
+            renderAll();
+
+            // 重置部分表单
+            document.getElementById('quantity').value = 1;
+            document.getElementById('remark').value = '';
+            alert(`${currentType === 'IN' ? '✅ 入库成功' : '📤 出库成功'}！（操作人：${operator}）`);
+        });
+
+        // --- 渲染页面与图表数据 ---
+        function renderAll() {
+            renderDashboard();
+            renderStockTable();
+            renderLogsTable();
+        }
+
+        function renderDashboard() {
+            const keys = Object.keys(inventory);
+            let totalStock = 0;
+            let warningCount = 0;
+
+            keys.forEach(k => {
+                totalStock += inventory[k].stock;
+                if (inventory[k].stock <= inventory[k].minStock) {
+                    warningCount++;
+                }
+            });
+
+            let totalIn = logs.filter(l => l.type === 'IN').reduce((acc, curr) => acc + curr.qty, 0);
+
+            document.getElementById('statTotalItems').innerText = keys.length;
+            document.getElementById('statTotalStock').innerText = totalStock;
+            document.getElementById('statTotalIn').innerText = totalIn;
+            document.getElementById('statWarningCount').innerText = warningCount;
+        }
+
+        function renderStockTable() {
+            const tbody = document.getElementById('stockTableBody');
+            const keyword = searchInput.value.toLowerCase();
+            tbody.innerHTML = '';
+
+            Object.values(inventory).forEach(item => {
+                if (keyword && !item.sku.toLowerCase().includes(keyword) && !item.name.toLowerCase().includes(keyword)) {
+                    return;
+                }
+
+                const isWarning = item.stock <= item.minStock;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold">${item.sku}</td>
+                    <td class="p-3 font-medium text-slate-900">${item.name}</td>
+                    <td class="p-3 text-slate-500">${item.category}</td>
+                    <td class="p-3 text-sm font-bold ${isWarning ? 'text-amber-600' : 'text-slate-800'}">${item.stock}</td>
+                    <td class="p-3 text-slate-400 font-mono">${item.minStock}</td>
+                    <td class="p-3">
+                        ${isWarning 
+                            ? '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-semibold">库存预警</span>' 
+                            : '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-semibold">库存正常</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderLogsTable() {
+            const tbody = document.getElementById('logsTableBody');
+            const keyword = searchInput.value.toLowerCase();
+            tbody.innerHTML = '';
+
+            logs.forEach(log => {
+                if (keyword && !log.sku.toLowerCase().includes(keyword) && !log.name.toLowerCase().includes(keyword) && !log.operator.toLowerCase().includes(keyword)) {
+                    return;
+                }
+
+                const isIn = log.type === 'IN';
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-400 text-[11px]">${log.time}</td>
+                    <td class="p-3">
+                        <span class="${isIn ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'} px-2 py-0.5 rounded text-[10px] font-bold">
+                            ${isIn ? '入库' : '出库'}
+                        </span>
+                    </td>
+                    <td class="p-3 font-bold">${log.sku}</td>
+                    <td class="p-3 text-slate-800">${log.name}</td>
+                    <td class="p-3 font-bold ${isIn ? 'text-emerald-600' : 'text-rose-600'}">${isIn ? '+' : '-'}${log.qty}</td>
+                    <td class="p-3 text-slate-600">${log.operator}</td>
+                    <td class="p-3 text-slate-400 text-[11px]">${log.remark || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 检索与 Tab 切换交互 ---
+        searchInput.addEventListener('input', renderAll);
+
+        tabStockBtn.addEventListener('click', () => {
+            tabStock.classList.remove('hidden');
+            tabLogs.classList.add('hidden');
+            tabStockBtn.className = 'px-4 py-2 rounded-lg bg-white shadow-sm border border-slate-200 text-blue-600';
+            tabLogsBtn.className = 'px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800';
+        });
+
+        tabLogsBtn.addEventListener('click', () => {
+            tabLogs.classList.remove('hidden');
+            tabStock.classList.add('hidden');
+            tabLogsBtn.className = 'px-4 py-2 rounded-lg bg-white shadow-sm border border-slate-200 text-blue-600';
+            tabStockBtn.className = 'px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800';
+        });
+
+        // --- 持久化与数据导出 ---
+        function saveData() {
+            localStorage.setItem('WMS_INVENTORY', JSON.stringify(inventory));
+            localStorage.setItem('WMS_LOGS', JSON.stringify(logs));
+        }
+
+        document.getElementById('btnExportExcel').addEventListener('click', () => {
+            if (Object.keys(inventory).length === 0) {
+                alert('当前暂无数据可导出！');
+                return;
+            }
+
+            const stockData = Object.values(inventory).map(i => ({
+                'SKU条码': i.sku,
+                '物品名称': i.name,
+                '类别': i.category,
+                '当前库存': i.stock,
+                '安全警戒线': i.minStock,
+                '预警状态': i.stock <= i.minStock ? '预警' : '正常'
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const wsStock = XLSX.utils.json_to_sheet(stockData);
+            const wsLogs = XLSX.utils.json_to_sheet(logs);
+
+            XLSX.utils.book_append_sheet(wb, wsStock, "当前库存");
+            XLSX.utils.book_append_sheet(wb, wsLogs, "出入库明细流水");
+
+            XLSX.writeFile(wb, `仓储出入库报表_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+
+        document.getElementById('btnClearData').addEventListener('click', () => {
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('❌ 权限不足：只有【管理员】账号才可以清空系统数据！');
+                return;
+            }
+            if (confirm('⚠️ 警告：确定要彻底清空所有库存及出入库流水数据吗？此操作无法撤销！')) {
+                localStorage.removeItem('WMS_INVENTORY');
+                localStorage.removeItem('WMS_LOGS');
+                inventory = {};
+                logs = [];
+                renderAll();
+            }
+        });
+
+        // 初始化运行
+        checkAuth();
+        renderAll();
+    </script>
+</body>
+</html>
