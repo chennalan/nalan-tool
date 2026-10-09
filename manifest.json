@@ -1,0 +1,8 @@
+{
+  "name": "AI证件照工作台 Pro",
+  "short_name": "证件照Pro",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f3f6fb",
+  "theme_color": "#1769e0"
+}

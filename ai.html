@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1769e0">
+<title>AI证件照工作台 Pro</title>
+<style>
+:root{--blue:#1769e0;--ink:#172033;--muted:#64748b;--line:#dbe3ef;--bg:#f3f6fb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);padding:18px max(18px,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:clamp(22px,3vw,30px);margin:0}header p{margin:3px 0 0;color:var(--muted);font-size:13px}
+main{max-width:1180px;margin:22px auto;padding:0 16px;display:grid;grid-template-columns:350px 1fr;gap:18px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px #182c4d0a;min-width:0}
+h2{font-size:17px;margin:0 0 12px}h3{font-size:14px;margin:18px 0 8px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px}
+input,select{font:inherit;max-width:100%}input[type=file]{width:100%;font-size:13px}input[type=number],select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:white}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:white;color:var(--ink);padding:9px 12px;border-radius:10px}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:7px}.swatch{width:38px;height:34px;border:2px solid #d7dfeb;padding:0}.swatch[aria-pressed=true]{outline:2px solid var(--blue);outline-offset:2px}
+.range{width:100%}.hint{font-size:12px;color:var(--muted)}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.preview-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.stage{min-height:460px;background:repeating-conic-gradient(#f5f7fb 0% 25%,#fff 0% 50%) 50%/20px 20px;border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;padding:18px;overflow:hidden}
+canvas{display:block;max-width:100%;max-height:70vh;width:auto;height:auto;object-fit:contain;box-shadow:0 6px 24px #0f172a18}
+#status{padding:10px 12px;background:#f0f6ff;color:#234b83;border-radius:10px;margin-top:12px;font-size:13px;white-space:pre-wrap}
+#sheetCanvas{display:none}.fine{font-size:12px;color:var(--muted);margin-top:14px}
+@media(max-width:800px){main{grid-template-columns:1fr}.stage{min-height:300px}header{align-items:flex-start}}
+</style>
+</head>
+<body>
+<header><div><h1>📷 AI证件照工作台 Pro</h1><p>浏览器本地处理 · 证件规格 · 背景替换 · A4 排版</p></div><button id="themeBtn">深色模式</button></header>
+<main>
+<section class="panel">
+<h2>制作设置</h2>
+<label for="upload">上传照片</label><input id="upload" type="file" accept="image/*">
+<div class="hint">建议使用正面、光线均匀、肩部完整的照片。</div>
+<label for="size">证件照规格</label>
+<select id="size">
+<option value="295,413">一寸 · 295 × 413 px</option>
+<option value="413,579">二寸 · 413 × 579 px</option>
+<option value="260,378">小一寸 · 260 × 378 px</option>
+<option value="413,531">小二寸 · 413 × 531 px</option>
+<option value="600,600">方形签证照 · 600 × 600 px</option>
+<option value="custom">自定义尺寸</option>
+</select>
+<div class="row" id="customFields" hidden>
+<div style="flex:1"><label for="customW">宽（px）</label><input id="customW" type="number" min="50" max="4000" value="295"></div>
+<div style="flex:1"><label for="customH">高（px）</label><input id="customH" type="number" min="50" max="4000" value="413"></div>
+</div>
+<h3>背景颜色</h3>
+<div class="row">
+<button class="swatch" data-color="#438edb" style="background:#438edb" aria-label="蓝底" aria-pressed="true"></button>
+<button class="swatch" data-color="#ffffff" style="background:#fff" aria-label="白底" aria-pressed="false"></button>
+<button class="swatch" data-color="#d90000" style="background:#d90000" aria-label="红底" aria-pressed="false"></button>
+<button class="swatch" data-color="#808080" style="background:#808080" aria-label="灰底" aria-pressed="false"></button>
+<input id="customColor" type="color" value="#438edb" aria-label="自定义背景色" style="width:42px;height:36px">
+</div>
+<h3>构图调整</h3>
+<label for="zoom">缩放 <span id="zoomVal">100%</span></label><input class="range" id="zoom" type="range" min="70" max="180" value="100">
+<label for="offsetX">左右位置</label><input class="range" id="offsetX" type="range" min="-100" max="100" value="0">
+<label for="offsetY">上下位置</label><input class="range" id="offsetY" type="range" min="-100" max="100" value="0">
+<h3>画面增强</h3>
+<label for="brightness">亮度 <span id="brightVal">100%</span></label><input class="range" id="brightness" type="range" min="70" max="140" value="100">
+<label for="contrast">对比度 <span id="contrastVal">100%</span></label><input class="range" id="contrast" type="range" min="70" max="140" value="100">
+<label for="beautyStrength">轻微磨皮 <span id="beautyVal">12%</span></label><input class="range" id="beautyStrength" type="range" min="0" max="40" value="12">
+<div class="hint">轻度全图柔化效果，不会改变五官；强度设为 0 可关闭。它不是专业 AI 肤质识别，因此头发和背景也会有极轻微柔化。</div>
+<div class="actions">
+<button class="primary" id="processBtn">生成证件照</button>
+<button id="resetBtn">重置调整</button>
+<button id="downloadPng" class="primary">导出 PNG</button>
+<button id="downloadJpg">导出 JPG</button>
+</div>
+<h3>背景抠除（可选）</h3>
+<button id="cutoutBtn">加载 AI 抠图并处理</button>
+<div class="hint">首次使用需联网下载 MediaPipe 模型；模型服务不可用时，普通裁剪、换底和导出仍可使用。AI 分割主要针对人物自拍，复杂发丝效果因原图而异。</div>
+<h3>A4 打印排版</h3>
+<label for="copies">照片张数</label><select id="copies"><option>6</option><option>8</option><option selected>9</option><option>12</option></select>
+<div class="actions"><button id="makeSheet" class="primary">生成 A4 排版</button><button id="downloadSheet">下载排版 PNG</button><button id="printSheet">打印排版</button></div>
+<div class="fine">隐私说明：普通处理在本机浏览器完成。使用 AI 抠图时会从第三方 CDN 加载脚本和模型；照片是否离开设备取决于所用模型库实现与运行环境，请勿处理不适合交给第三方服务的数据。</div>
+</section>
+<section class="panel">
+<div class="preview-head"><h2>证件照预览</h2><span class="hint" id="dimensions">等待上传照片</span></div>
+<div class="stage"><canvas id="canvas" width="295" height="413"></canvas></div>
+<div id="status" role="status">请先上传一张照片。上传后可调整尺寸、背景颜色和构图。</div>
+<div style="margin-top:16px"><h2>A4 排版预览</h2><div class="stage" style="min-height:260px"><canvas id="sheetCanvas" width="2480" height="3508"></canvas><span id="sheetPlaceholder" class="hint">点击“生成 A4 排版”后显示</span></div></div>
+</section>
+</main>
+<script src="js/app.js"></script>
+</body></html>

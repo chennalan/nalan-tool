@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>咸鱼的个人主页 &amp; 工具箱</title>
-<meta name="description" content="咸鱼的个人主页与实用工具箱：公文标准排版、PDF 处理、音频解锁、图片转换、SEO 分析、题库练习、密码管理等在线小工具，即点即用。" />
+<title>纳兰的个人主页 &amp; 工具箱</title>
+<meta name="description" content="纳兰的个人主页与实用工具箱：公文标准排版、PDF 处理、音频解锁、图片转换、SEO 分析、题库练习、密码管理等在线小工具，即点即用。" />
 <meta name="theme-color" content="#2563eb" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%9F%3C/text%3E%3C/svg%3E" />
 
@@ -111,10 +111,10 @@
 
       <div class="space-y-4 text-center md:text-left">
         <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-          你好，我是 <span class="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text font-bold text-transparent">咸鱼</span> 👋
+          你好，我是 <span class="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text font-bold text-transparent">纳兰</span> 👋
         </h1>
         <p class="max-w-2xl text-lg leading-relaxed text-slate-600">
-          一名热衷于探索高效生产力工具的全栈开发者。这里记录了我日常开发和积累的实用小工具，希望能帮你提升工作与学习效率。
+          一名热衷于探索极简生产力工具的全栈开发者。这里记录了我日常开发和积累的实用小工具，希望能帮你提升工作与学习效率。
         </p>
         <div class="flex flex-wrap justify-center gap-2 pt-2 md:justify-start">
           <span class="rounded-md bg-slate-200/60 px-3 py-1 text-xs font-medium text-slate-700">公文标准排版</span>
@@ -310,6 +310,21 @@
           </div>
         </div>
 
+        <!-- 11. 证件照编辑 -->
+        <div class="tool-card group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" data-category="media">
+          <div class="space-y-3">
+            <div class="grid h-12 w-12 place-items-center rounded-xl bg-pink-100 text-xl font-bold text-pink-600">📷</div>
+            <h3 class="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">证件照编辑</h3>
+            <p class="line-clamp-2 text-sm text-slate-500">网页端智能证件照裁剪、更换底色与标准尺寸生成工具。</p>
+          </div>
+          <div class="flex gap-2 pt-6">
+            <button type="button" onclick="openModal('ai.html', '证件照编辑')"
+                    class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-200">在线预览</button>
+            <a href="ai.html" target="_blank" rel="noopener"
+               class="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white shadow-sm transition hover:bg-blue-700">独立打开</a>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -328,7 +343,7 @@
       </div>
 
       <p class="mt-8 text-xs text-slate-400">
-        © <span id="year">2026</span> My Workspaces. 保留所有权利。
+        © <span id="year">2026</span> bychennalan. 保留所有权利。
       </p>
     </div>
   </footer>
