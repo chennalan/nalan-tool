@@ -104,6 +104,8 @@ main{padding:24px 18px 50px}.intro{margin-bottom:18px}.intro h2{font-size:26px;m
   const a=files[1],b=files[2];
   $("promptText").textContent=(a&&b)?basePrompt:"请先上传图一（形态参考图）和图二（服装细节来源图）。\n\n上传完成后会显示固定处理指令。";
   $("copyBtn").disabled=!(a&&b);
+  // 两张参考图齐全后启用实际生成按钮；密码在点击时单独校验。
+  $("generateBtn").disabled=!(a&&b);
  }
  function setStatus(s,error=false){$("status").textContent=s;$("status").style.color=error?"#b42318":"#166534";}
  [1,2].forEach(n=>{
