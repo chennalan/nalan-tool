@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>AI 人像抠图与纯色背景 - 纳兰工具箱</title>
+  <meta name="description" content="浏览器端 AI 人像抠图，一键更换纯色背景，16:9 高清 PNG/JPG 导出。">
+  <style>
+    :root{color-scheme:light;--bg:#f4f6fa;--panel:#fff;--ink:#172033;--muted:#697386;--line:#e2e7ef;--accent:#4f46e5;--accent2:#4338ca}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+    button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:11px 15px;font-weight:650;transition:.15s}
+    button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--accent);color:white}.primary:hover:not(:disabled){background:var(--accent2)}.secondary{background:#eef1f7;color:#263148}.secondary:hover:not(:disabled){background:#e2e7f0}
+    header{background:#111827;color:#fff;padding:20px 22px}header .wrap,main{max-width:1180px;margin:auto}header .brand{display:flex;gap:12px;align-items:center}header .mark{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#818cf8,#4f46e5);font-size:22px}
+    h1{font-size:20px;line-height:1.2;margin:0}header p{margin:5px 0 0;color:#cbd5e1;font-size:13px}
+    main{padding:24px 18px 48px}.intro{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin-bottom:18px}.intro h2{font-size:25px;margin:0 0 4px}.intro p{margin:0;color:var(--muted)}.pill{border:1px solid #dbe1ef;background:#fff;color:#596579;border-radius:999px;padding:6px 11px;font-size:12px;white-space:nowrap}
+    .layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.85fr);gap:18px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 26px #1c2b4a08;overflow:hidden}.panel-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.panel-head h3{margin:0;font-size:15px}.panel-body{padding:18px}
+    .drop{min-height:125px;border:1.5px dashed #b9c4d8;border-radius:15px;background:#f8faff;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;cursor:pointer}.drop.drag{border-color:var(--accent);background:#eef2ff}.drop strong{display:block;margin:5px 0}.drop small{color:var(--muted)}.drop .upload-icon{font-size:26px}
+    .previews{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.preview-label{font-size:12px;font-weight:700;color:#596579;margin:0 0 7px}.image-box{aspect-ratio:16/9;width:100%;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:grid;place-items:center;background-color:#fff;background-image:linear-gradient(45deg,#edf0f5 25%,transparent 25%),linear-gradient(-45deg,#edf0f5 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#edf0f5 75%),linear-gradient(-45deg,transparent 75%,#edf0f5 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0}.image-box img{width:100%;height:100%;object-fit:contain}.image-box .empty{color:#9aa4b5;font-size:12px;text-align:center;padding:8px}
+    .status{display:none;margin-top:14px;border-radius:12px;padding:12px 14px;background:#eef2ff;color:#3730a3;font-size:13px}.status.show{display:block}.status.error{background:#fff1f2;color:#be123c}.status.success{background:#ecfdf5;color:#047857}.progress{height:5px;background:#dbe3f4;border-radius:999px;margin-top:8px;overflow:hidden}.progress span{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+    .controls{display:grid;gap:17px}.field label,.field .field-label{display:block;font-size:13px;font-weight:700;margin-bottom:8px}.colors{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.swatch{padding:0;background:transparent;border:2px solid transparent;border-radius:10px}.swatch span{display:block;height:34px;border-radius:7px;border:1px solid #d5dbe5}.swatch.active{border-color:var(--accent);padding:3px}.swatch.active span{height:28px}.custom-color{display:flex;gap:9px;align-items:center;margin-top:10px}.custom-color input[type=color]{width:44px;height:38px;padding:2px;border:1px solid var(--line);border-radius:9px;background:white}.custom-color input[type=text]{min-width:0;flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 10px;text-transform:uppercase}
+    select{width:100%;border:1px solid var(--line);border-radius:10px;background:white;padding:10px;color:var(--ink)}.hint{font-size:12px;color:var(--muted);margin:7px 0 0}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.actions button{width:100%}.actions .wide{grid-column:1/-1}.divider{height:1px;background:var(--line)}.privacy{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:flex-start}.privacy b{color:#334155}
+    footer{text-align:center;color:#8b95a7;font-size:12px;padding:18px}.hidden{display:none!important}
+    @media(max-width:850px){.layout{grid-template-columns:1fr}.intro{align-items:flex-start;flex-direction:column}.controls{grid-template-columns:1fr 1fr}.controls .field:first-child{grid-column:1/-1}}
+    @media(max-width:520px){header{padding:16px}.intro h2{font-size:22px}.previews{grid-template-columns:1fr}.controls{grid-template-columns:1fr}.controls .field:first-child{grid-column:auto}.panel-body{padding:13px}.colors{gap:5px}.swatch span{height:30px}}
+  </style>
+</head>
+<body>
+<header><div class="wrap"><div class="brand"><div class="mark" aria-hidden="true">✂</div><div><h1>AI 人像抠图工坊</h1><p>NALAN TOOLBOX · CUTOUT & SOLID BACKGROUND</p></div></div></div></header>
+<main>
+  <div class="intro"><div><h2>抠出人像，一键换背景</h2><p>自动识别人像主体，选择纯色背景并导出 16:9 高清图片。</p></div><span class="pill">本地浏览器处理 · 无需注册</span></div>
+  <div class="layout">
+    <section class="panel">
+      <div class="panel-head"><h3>① 上传与预览</h3><span class="pill">JPG / PNG / WebP</span></div>
+      <div class="panel-body">
+        <label class="drop" id="dropzone" for="fileInput"><span><span class="upload-icon">⇧</span><strong>点击选择图片，或拖放到这里</strong><small>建议使用清晰的人像照片；首次运行需下载 AI 模型。</small></span></label>
+        <input id="fileInput" class="hidden" type="file" accept="image/png,image/jpeg,image/webp">
+        <div class="previews">
+          <div><p class="preview-label">原始图片</p><div class="image-box"><img id="originalPreview" class="hidden" alt="原始图片预览"><div id="originalEmpty" class="empty">等待上传图片</div></div></div>
+          <div><p class="preview-label">抠图 + 背景预览（16:9）</p><div class="image-box" id="resultBox" style="background:#fff"><img id="resultPreview" class="hidden" alt="抠图结果预览"><div id="resultEmpty" class="empty">处理完成后显示结果</div></div></div>
+        </div>
+        <div id="status" class="status" role="status" aria-live="polite"><span id="statusText">准备就绪</span><div id="progress" class="progress"><span id="progressBar"></span></div></div>
+      </div>
+    </section>
+    <aside class="panel">
+      <div class="panel-head"><h3>② 背景与导出设置</h3><span class="pill">16:9 横版</span></div>
+      <div class="panel-body controls">
+        <div class="field"><span class="field-label">纯色背景</span>
+          <div class="colors" role="group" aria-label="选择背景颜色">
+            <button class="swatch active" data-color="#FFFFFF" aria-label="纯白" title="纯白"><span style="background:#FFFFFF"></span></button>
+            <button class="swatch" data-color="#F5F0E8" aria-label="奶油白" title="奶油白"><span style="background:#F5F0E8"></span></button>
+            <button class="swatch" data-color="#E8E8E8" aria-label="浅灰" title="浅灰"><span style="background:#E8E8E8"></span></button>
+            <button class="swatch" data-color="#F8DDE7" aria-label="樱花粉" title="樱花粉"><span style="background:#F8DDE7"></span></button>
+            <button class="swatch" data-color="#222222" aria-label="黑色" title="黑色"><span style="background:#222222"></span></button>
+          </div>
+          <div class="custom-color"><input id="colorPicker" type="color" value="#FFFFFF" aria-label="自定义背景颜色"><input id="colorText" type="text" value="#FFFFFF" maxlength="7" aria-label="背景 HEX 色值"></div>
+          <p class="hint">点击色块或选择任意 HEX 颜色，预览会同步更新。</p>
+        </div>
+        <div class="field"><label for="resolution">导出分辨率</label><select id="resolution"><option value="1920x1080">Full HD · 1920 × 1080</option><option value="2560x1440">2K · 2560 × 1440</option><option value="3840x2160">4K · 3840 × 2160</option></select><p class="hint">较高分辨率会增加内存占用；不会凭空增加原图细节。</p></div>
+        <div class="field"><label for="fitMode">人物画面适配</label><select id="fitMode"><option value="contain">完整显示人物（推荐）</option><option value="fill">尽量填满画面，超出部分会裁切</option></select></div>
+        <div class="actions"><button id="processBtn" class="primary wide" disabled>✦ AI 智能抠图</button><button id="pngBtn" class="secondary" disabled>下载 PNG</button><button id="jpgBtn" class="secondary" disabled>下载 JPG</button><button id="resetBtn" class="secondary wide">重新选择图片</button></div>
+        <div class="privacy"><span aria-hidden="true">🔒</span><span><b>隐私说明：</b>图片在当前浏览器内处理，不会由本工具上传到自建服务器。首次使用需要从模型托管站下载抠图模型，具体能力取决于浏览器与设备性能。</span></div>
+      </div>
+    </aside>
+  </div>
+</main>
+<footer>纳兰工具箱 · AI 抠图由开源浏览器端模型驱动 · 建议导出前检查头发与透明边缘</footer>
+<script type="module">
+  const $ = (id) => document.getElementById(id);
+  const state = { file:null, sourceUrl:null, cutoutUrl:null, color:"#FFFFFF", processing:false, module:null };
+  const status = (message, type="", progress=null) => {
+    $("status").className = "status show" + (type ? " "+type : "");
+    $("statusText").textContent = message;
+    $("progress").classList.toggle("hidden", progress === null);
+    if (progress !== null) $("progressBar").style.width = Math.max(0,Math.min(100,progress))+"%";
+  };
+  const setBusy = (busy) => {
+    state.processing = busy;
+    $("processBtn").disabled = busy || !state.file;
+    $("fileInput").disabled = busy;
+    $("processBtn").textContent = busy ? "正在处理…" : "✦ AI 智能抠图";
+  };
+  const validHex = (value) => /^#[0-9a-fA-F]{6}$/.test(value);
+  function setColor(value) {
+    if (!validHex(value)) return;
+    state.color = value.toUpperCase();
+    $("colorPicker").value = state.color;
+    $("colorText").value = state.color;
+    document.querySelectorAll(".swatch").forEach(b=>b.classList.toggle("active",b.dataset.color===state.color));
+    $("resultBox").style.background = state.color;
+    if (state.cutoutUrl) renderPreview();
+  }
+  function fitRect(iw,ih,cw,ch,mode) {
+    const scale = mode === "fill" ? Math.max(cw/iw,ch/ih) : Math.min(cw/iw,ch/ih);
+    const w=iw*scale,h=ih*scale;
+    return {x:(cw-w)/2,y:(ch-h)/2,w,h};
+  }
+  function loadImage(url) {
+    return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=url;});
+  }
+  async function compose(width,height,type) {
+    if (!state.cutoutUrl) throw new Error("请先完成 AI 抠图。");
+    const img = await loadImage(state.cutoutUrl);
+    const canvas = document.createElement("canvas"); canvas.width=width; canvas.height=height;
+    const ctx=canvas.getContext("2d",{alpha:false});
+    ctx.fillStyle=state.color;ctx.fillRect(0,0,width,height);
+    const r=fitRect(img.naturalWidth,img.naturalHeight,width*0.88,height*0.9,$("fitMode").value);
+    ctx.drawImage(img,(width-r.w)/2+r.x,(height-r.h)/2+r.y,r.w,r.h);
+    // fitRect 已以指定画布尺寸为中心计算；直接按其结果绘制
+    ctx.fillStyle=state.color;
+    // 重新绘制底色后再叠加，以确保 JPG 无透明像素
+    ctx.globalCompositeOperation="destination-over";
+    ctx.fillRect(0,0,width,height);ctx.globalCompositeOperation="source-over";
+    return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("导出失败，可能是图片尺寸过大。")),type,type==="image/jpeg"?0.96:1));
+  }
+  async function composeCorrect(width,height,type) {
+    if (!state.cutoutUrl) throw new Error("请先完成 AI 抠图。");
+    const img=await loadImage(state.cutoutUrl);
+    const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
+    const ctx=canvas.getContext("2d",{alpha:false});
+    ctx.fillStyle=state.color;ctx.fillRect(0,0,width,height);
+    const r=fitRect(img.naturalWidth,img.naturalHeight,width*0.88,height*0.9,$("fitMode").value);
+    ctx.drawImage(img,(width-r.w)/2,(height-r.h)/2,r.w,r.h);
+    return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("导出失败，可能是图片尺寸过大。")),type,type==="image/jpeg"?0.96:1));
+  }
+  async function renderPreview() {
+    if (!state.cutoutUrl) return;
+    try {
+      const blob=await composeCorrect(960,540,"image/png");
+      const url=URL.createObjectURL(blob);
+      const old=$("resultPreview").src;
+      $("resultPreview").src=url;$("resultPreview").classList.remove("hidden");$("resultEmpty").classList.add("hidden");
+      if(old.startsWith("blob:")) URL.revokeObjectURL(old);
+    } catch(e) { status(e.message,"error",null); }
+  }
+  function loadFile(file) {
+    if (!file) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {status("文件格式不支持，请选择 JPG、PNG 或 WebP。","error",null);return;}
+    if (file.size>25*1024*1024) {status("图片超过 25 MB，请先压缩后再试。","error",null);return;}
+    if(state.sourceUrl) URL.revokeObjectURL(state.sourceUrl);
+    if(state.cutoutUrl) URL.revokeObjectURL(state.cutoutUrl);
+    state.file=file;state.sourceUrl=URL.createObjectURL(file);state.cutoutUrl=null;
+    $("originalPreview").src=state.sourceUrl;$("originalPreview").classList.remove("hidden");$("originalEmpty").classList.add("hidden");
+    $("resultPreview").classList.add("hidden");$("resultEmpty").classList.remove("hidden");
+    $("processBtn").disabled=false;$("pngBtn").disabled=true;$("jpgBtn").disabled=true;
+    status("图片已载入。点击“AI 智能抠图”开始处理。","",0);
+  }
+  async function processImage() {
+    if(!state.file||state.processing)return;
+    setBusy(true);$("pngBtn").disabled=true;$("jpgBtn").disabled=true;
+    status("正在加载 AI 抠图引擎…首次使用可能需要下载模型。","",8);
+    try {
+      if(!state.module) {
+        state.module=await import("https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm");
+      }
+      status("AI 正在识别前景并生成透明蒙版，请稍候…","",25);
+      const result=await state.module.removeBackground(state.file,{
+        model:"isnet",
+        output:{format:"image/png",quality:1},
+        progress:(key,current,total)=> {
+          if(typeof current==="number"&&typeof total==="number"&&total>0) {
+            const p=Math.min(90,25+Math.round(current/total*65));
+            status("正在下载模型或处理图像… "+key,"",p);
+          }
+        }
+      });
+      if(state.cutoutUrl)URL.revokeObjectURL(state.cutoutUrl);
+      state.cutoutUrl=URL.createObjectURL(result);
+      await renderPreview();
+      $("pngBtn").disabled=false;$("jpgBtn").disabled=false;
+      status("抠图完成！可更换背景颜色并导出 16:9 高清图片。","success",100);
+    } catch(err) {
+      console.error(err);
+      const msg=String(err?.message||err);
+      status("抠图失败："+msg+"。请检查网络连接后重试，或换一张清晰的人像照片。","error",null);
+    } finally {setBusy(false);}
+  }
+  async function download(type) {
+    try {
+      const [w,h]=$("resolution").value.split("x").map(Number);
+      status("正在生成 "+w+" × "+h+" 图片…","",80);
+      const blob=await composeCorrect(w,h,type==="png"?"image/png":"image/jpeg");
+      const url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url;a.download="nalan-portrait-16x9-"+w+"x"+h+"."+type;
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      status("导出完成："+w+" × "+h+" · "+type.toUpperCase(),"success",100);
+    } catch(e) {status(e.message||"导出失败。","error",null);}
+  }
+  $("fileInput").addEventListener("change",e=>loadFile(e.target.files?.[0]));
+  $("dropzone").addEventListener("dragover",e=>{e.preventDefault();$("dropzone").classList.add("drag");});
+  $("dropzone").addEventListener("dragleave",()=> $("dropzone").classList.remove("drag"));
+  $("dropzone").addEventListener("drop",e=>{e.preventDefault();$("dropzone").classList.remove("drag");loadFile(e.dataTransfer.files?.[0]);});
+  document.querySelectorAll(".swatch").forEach(b=>b.addEventListener("click",()=>setColor(b.dataset.color)));
+  $("colorPicker").addEventListener("input",e=>setColor(e.target.value));
+  $("colorText").addEventListener("change",e=>{if(validHex(e.target.value))setColor(e.target.value);else e.target.value=state.color;});
+  $("processBtn").addEventListener("click",processImage);
+  $("pngBtn").addEventListener("click",()=>download("png"));
+  $("jpgBtn").addEventListener("click",()=>download("jpg"));
+  $("resolution").addEventListener("change",()=>{if(state.cutoutUrl)status("导出分辨率已更新："+$("resolution").value.replace("x"," × "),"success",100);});
+  $("fitMode").addEventListener("change",renderPreview);
+  $("resetBtn").addEventListener("click",()=>{
+    if(state.sourceUrl)URL.revokeObjectURL(state.sourceUrl);if(state.cutoutUrl)URL.revokeObjectURL(state.cutoutUrl);
+    state.file=null;state.sourceUrl=null;state.cutoutUrl=null;
+    $("fileInput").value="";$("originalPreview").classList.add("hidden");$("resultPreview").classList.add("hidden");
+    $("originalEmpty").classList.remove("hidden");$("resultEmpty").classList.remove("hidden");
+    $("processBtn").disabled=true;$("pngBtn").disabled=true;$("jpgBtn").disabled=true;
+    status("已清空，可以选择下一张图片。","",0);
+  });
+  setColor("#FFFFFF");
+</script>
+</body>
+</html>
