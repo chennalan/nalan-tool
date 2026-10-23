@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111827">
   <title>AI 人像抠图与纯色背景 - 纳兰工具箱</title>
-  <meta name="description" content="浏览器端 AI 人像抠图，一键更换纯色背景，16:9 高清 PNG/JPG 导出。">
+  <meta name="description" content="浏览器端 AI 人像抠图，一键更换纯色背景，支持横版与竖版高清 PNG/JPG 导出。">
   <style>
     :root{color-scheme:light;--bg:#f4f6fa;--panel:#fff;--ink:#172033;--muted:#697386;--line:#e2e7ef;--accent:#4f46e5;--accent2:#4338ca}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
@@ -28,7 +28,7 @@
 <body>
 <header><div class="wrap"><div class="brand"><div class="mark" aria-hidden="true">✂</div><div><h1>AI 人像抠图工坊</h1><p>NALAN TOOLBOX · CUTOUT & SOLID BACKGROUND</p></div></div></div></header>
 <main>
-  <div class="intro"><div><h2>抠出人像，一键换背景</h2><p>自动识别人像主体，选择纯色背景并导出 16:9 高清图片。</p></div><span class="pill">本地浏览器处理 · 无需注册</span></div>
+  <div class="intro"><div><h2>抠出人像，一键换背景</h2><p>自动识别人像主体，选择纯色背景并按横版或竖版导出高清图片。</p></div><span class="pill">本地浏览器处理 · 无需注册</span></div>
   <div class="layout">
     <section class="panel">
       <div class="panel-head"><h3>① 上传与预览</h3><span class="pill">JPG / PNG / WebP</span></div>
@@ -37,13 +37,13 @@
         <input id="fileInput" class="hidden" type="file" accept="image/png,image/jpeg,image/webp">
         <div class="previews">
           <div><p class="preview-label">原始图片</p><div class="image-box"><img id="originalPreview" class="hidden" alt="原始图片预览"><div id="originalEmpty" class="empty">等待上传图片</div></div></div>
-          <div><p class="preview-label">抠图 + 背景预览（16:9）</p><div class="image-box" id="resultBox" style="background:#fff"><img id="resultPreview" class="hidden" alt="抠图结果预览"><div id="resultEmpty" class="empty">处理完成后显示结果</div></div></div>
+          <div><p class="preview-label" id="resultPreviewLabel">抠图 + 背景预览（横版 16:9）</p><div class="image-box" id="resultBox" style="background:#fff;aspect-ratio:16/9"><img id="resultPreview" class="hidden" alt="抠图结果预览"><div id="resultEmpty" class="empty">处理完成后显示结果</div></div></div>
         </div>
         <div id="status" class="status" role="status" aria-live="polite"><span id="statusText">准备就绪</span><div id="progress" class="progress"><span id="progressBar"></span></div></div>
       </div>
     </section>
     <aside class="panel">
-      <div class="panel-head"><h3>② 背景与导出设置</h3><span class="pill">16:9 横版</span></div>
+      <div class="panel-head"><h3>② 背景与导出设置</h3><span class="pill" id="orientationBadge">16:9 横版</span></div>
       <div class="panel-body controls">
         <div class="field"><span class="field-label">纯色背景</span>
           <div class="colors" role="group" aria-label="选择背景颜色">
@@ -56,6 +56,7 @@
           <div class="custom-color"><input id="colorPicker" type="color" value="#FFFFFF" aria-label="自定义背景颜色"><input id="colorText" type="text" value="#FFFFFF" maxlength="7" aria-label="背景 HEX 色值"></div>
           <p class="hint">点击色块或选择任意 HEX 颜色，预览会同步更新。</p>
         </div>
+        <div class="field"><label for="orientation">画面方向</label><select id="orientation"><option value="landscape">横版 · 16:9（适合视频、横幅）</option><option value="portrait">竖版 · 9:16（适合手机封面、短视频）</option></select><p class="hint">切换方向后，预览画布与导出分辨率会同步调整。</p></div>
         <div class="field"><label for="resolution">导出分辨率</label><select id="resolution"><option value="1920x1080">Full HD · 1920 × 1080</option><option value="2560x1440">2K · 2560 × 1440</option><option value="3840x2160">4K · 3840 × 2160</option></select><p class="hint">较高分辨率会增加内存占用；不会凭空增加原图细节。</p></div>
         <div class="field"><label for="fitMode">人物画面适配</label><select id="fitMode"><option value="contain">完整显示人物（推荐）</option><option value="fill">尽量填满画面，超出部分会裁切</option></select></div>
         <div class="actions"><button id="processBtn" class="primary wide" disabled>✦ AI 智能抠图</button><button id="pngBtn" class="secondary" disabled>下载 PNG</button><button id="jpgBtn" class="secondary" disabled>下载 JPG</button><button id="resetBtn" class="secondary wide">重新选择图片</button></div>
@@ -123,10 +124,25 @@
     ctx.drawImage(img,(width-r.w)/2,(height-r.h)/2,r.w,r.h);
     return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("导出失败，可能是图片尺寸过大。")),type,type==="image/jpeg"?0.96:1));
   }
+  function updateOrientation() {
+    const portrait = $("orientation").value === "portrait";
+    const options = portrait
+      ? [["1080x1920","Full HD · 1080 × 1920"],["1440x2560","2K · 1440 × 2560"],["2160x3840","4K · 2160 × 3840"]]
+      : [["1920x1080","Full HD · 1920 × 1080"],["2560x1440","2K · 2560 × 1440"],["3840x2160","4K · 3840 × 2160"]];
+    const resolution = $("resolution");
+    const previous = resolution.value;
+    resolution.innerHTML = options.map(([value,label]) => `<option value="${value}">${label}</option>`).join("");
+    resolution.value = options.some(([value]) => value === previous) ? previous : options[0][0];
+    $("resultBox").style.aspectRatio = portrait ? "9 / 16" : "16 / 9";
+    $("resultPreviewLabel").textContent = portrait ? "抠图 + 背景预览（竖版 9:16）" : "抠图 + 背景预览（横版 16:9）";
+    $("orientationBadge").textContent = portrait ? "9:16 竖版" : "16:9 横版";
+    if (state.cutoutUrl) renderPreview();
+  }
   async function renderPreview() {
     if (!state.cutoutUrl) return;
     try {
-      const blob=await composeCorrect(960,540,"image/png");
+      const portrait = $("orientation").value === "portrait";
+      const blob=await composeCorrect(portrait ? 540 : 960,portrait ? 960 : 540,"image/png");
       const url=URL.createObjectURL(blob);
       const old=$("resultPreview").src;
       $("resultPreview").src=url;$("resultPreview").classList.remove("hidden");$("resultEmpty").classList.add("hidden");
@@ -168,7 +184,7 @@
       state.cutoutUrl=URL.createObjectURL(result);
       await renderPreview();
       $("pngBtn").disabled=false;$("jpgBtn").disabled=false;
-      status("抠图完成！可更换背景颜色并导出 16:9 高清图片。","success",100);
+      status("抠图完成！可切换横版/竖版、更换背景颜色并导出高清图片。","success",100);
     } catch(err) {
       console.error(err);
       const msg=String(err?.message||err);
@@ -181,7 +197,7 @@
       status("正在生成 "+w+" × "+h+" 图片…","",80);
       const blob=await composeCorrect(w,h,type==="png"?"image/png":"image/jpeg");
       const url=URL.createObjectURL(blob),a=document.createElement("a");
-      a.href=url;a.download="nalan-portrait-16x9-"+w+"x"+h+"."+type;
+      a.href=url;a.download="nalan-portrait-"+($("orientation").value==="portrait"?"9x16":"16x9")+"-"+w+"x"+h+"."+type;
       document.body.appendChild(a);a.click();a.remove();
       setTimeout(()=>URL.revokeObjectURL(url),1500);
       status("导出完成："+w+" × "+h+" · "+type.toUpperCase(),"success",100);
@@ -197,6 +213,7 @@
   $("processBtn").addEventListener("click",processImage);
   $("pngBtn").addEventListener("click",()=>download("png"));
   $("jpgBtn").addEventListener("click",()=>download("jpg"));
+  $("orientation").addEventListener("change",updateOrientation);
   $("resolution").addEventListener("change",()=>{if(state.cutoutUrl)status("导出分辨率已更新："+$("resolution").value.replace("x"," × "),"success",100);});
   $("fitMode").addEventListener("change",renderPreview);
   $("resetBtn").addEventListener("click",()=>{
@@ -207,6 +224,7 @@
     $("processBtn").disabled=true;$("pngBtn").disabled=true;$("jpgBtn").disabled=true;
     status("已清空，可以选择下一张图片。","",0);
   });
+  updateOrientation();
   setColor("#FFFFFF");
 </script>
 </body>
