@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>图片水印工作台 - 纳兰工具箱</title>
+<link rel="stylesheet" href="css/dark-mode.css">
+<script src="js/dark-mode.js" defer></script>
+<style>
+:root{color-scheme:light dark;--bg:#f5f7fb;--panel:#fff;--ink:#172033;--muted:#64748b;--line:#dbe2ea;--accent:#2563eb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:14px 20px}header .bar{max-width:1440px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}a{color:inherit;text-decoration:none}.brand{font-weight:750}.wrap{max-width:1440px;margin:auto;padding:22px;display:grid;grid-template-columns:minmax(300px,370px) minmax(0,1fr);gap:20px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0}.panel h2{font-size:17px;margin:0 0 14px}.muted{color:var(--muted);font-size:13px}.drop{display:block;border:1.5px dashed #94a3b8;border-radius:14px;padding:24px 14px;text-align:center;cursor:pointer;background:rgba(148,163,184,.07)}.drop:hover{border-color:var(--accent)}input,select,button{font:inherit}input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:var(--panel);color:var(--ink)}input[type=range]{width:100%;accent-color:var(--accent)}input[type=color]{width:42px;height:36px;border:0;background:transparent;padding:0}label{display:block;font-size:13px;font-weight:650;margin:13px 0 6px}.fieldrow{display:flex;align-items:center;gap:10px}.fieldrow>*{min-width:0}.fieldrow .grow{flex:1}.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button,.btn{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--panel);color:var(--ink);cursor:pointer}.tabs button.active,.btn.primary{background:var(--accent);color:white;border-color:var(--accent)}.btn:disabled{opacity:.45;cursor:not-allowed}.preview{display:flex;align-items:center;justify-content:center;min-height:350px;background:repeating-conic-gradient(#e2e8f0 0% 25%,#f8fafc 0% 50%) 50%/24px 24px;border-radius:14px;overflow:hidden;padding:12px}.preview canvas{max-width:100%;max-height:70vh;object-fit:contain;box-shadow:0 8px 32px #0002}.queue{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:14px}.thumb{border:1px solid var(--line);border-radius:10px;padding:7px;min-width:0;cursor:pointer;background:var(--panel)}.thumb.active{outline:2px solid var(--accent)}.thumb img{width:100%;height:84px;object-fit:contain;display:block}.thumb span{display:block;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:5px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.status{margin-top:10px;font-size:13px;color:var(--muted);min-height:20px}.settinggrid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.check{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:12px}.check input{width:auto}.privacy{padding:11px 12px;background:rgba(16,185,129,.1);border-radius:10px;font-size:12px;margin-top:14px}.hidden{display:none!important}footer{max-width:1440px;margin:0 auto;padding:0 22px 24px;color:var(--muted);font-size:12px}
+@media(max-width:850px){.wrap{grid-template-columns:1fr;padding:12px}.panel{padding:14px}.preview{min-height:230px}header{padding:12px}.settinggrid{grid-template-columns:1fr 1fr}}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1120;--panel:#111827;--ink:#e5e7eb;--muted:#9ca3af;--line:#334155}.preview{background:repeating-conic-gradient(#334155 0% 25%,#1e293b 0% 50%) 50%/24px 24px}}
+</style>
+</head>
+<body data-tool="image-watermark">
+<header><div class="bar"><a class="brand" href="index.html">← 纳兰工具箱</a><strong>图片水印工作台</strong><span class="muted">本地处理 · 不上传图片</span></div></header>
+<main class="wrap">
+<section class="panel">
+<h2>① 添加图片</h2>
+<label class="drop" for="images"><div style="font-size:28px">＋</div><strong>选择图片或拖放到这里</strong><div class="muted">支持 JPG、PNG、WebP、GIF（按静态首帧处理）</div></label>
+<input id="images" type="file" accept="image/*" multiple class="hidden">
+<div class="actions"><button class="btn" id="addMore">继续添加</button><button class="btn" id="clear">清空列表</button></div>
+<div id="queue" class="queue"></div>
+<div class="status" id="queueStatus">尚未添加图片</div>
+<div class="privacy">🔒 图片和 Logo 只在当前浏览器内读取与合成，不会上传到服务器。原图不会被覆盖，下载的是新文件。</div>
+<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+<h2>② 水印设置</h2>
+<div class="tabs" role="group" aria-label="水印类型"><button class="active" data-mode="text">文字</button><button data-mode="logo">Logo</button><button data-mode="both">文字 + Logo</button></div>
+<div id="textSettings">
+<label for="watermarkText">水印文字</label><input id="watermarkText" type="text" value="AVENELLE" maxlength="120" placeholder="输入品牌名或版权声明">
+<div class="settinggrid">
+<div><label for="font">字体</label><select id="font"><option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="Times New Roman">Times New Roman</option><option value="sans-serif">系统无衬线</option><option value="serif">系统衬线</option><option value="monospace">等宽字体</option></select></div>
+<div><label for="color">文字颜色</label><div class="fieldrow"><input id="color" type="color" value="#ffffff"><span class="muted">可自定义</span></div></div>
+</div>
+<label for="fontSize">文字大小 <output id="fontSizeVal">5%</output></label><input id="fontSize" type="range" min="1" max="18" value="5">
+</div>
+<div id="logoSettings" class="hidden"><label for="logoFile">上传 Logo 图片</label><input id="logoFile" type="file" accept="image/*"><p class="muted">透明背景 PNG 效果最佳；Logo 同样只在本地使用。</p><label for="logoSize">Logo 宽度 <output id="logoSizeVal">20%</output></label><input id="logoSize" type="range" min="3" max="60" value="20"></div>
+<div class="settinggrid">
+<div><label for="opacity">透明度 <output id="opacityVal">35%</output></label><input id="opacity" type="range" min="5" max="100" value="35"></div>
+<div><label for="angle">旋转角度 <output id="angleVal">-30°</output></label><input id="angle" type="range" min="-90" max="90" value="-30"></div>
+<div><label for="spacingX">横向间距 <output id="spacingXVal">22%</output></label><input id="spacingX" type="range" min="5" max="60" value="22"></div>
+<div><label for="spacingY">纵向间距 <output id="spacingYVal">20%</output></label><input id="spacingY" type="range" min="5" max="60" value="20"></div>
+</div>
+<label for="placement">水印布局</label><select id="placement"><option value="tile">全图重复铺满</option><option value="center">居中单个</option><option value="bottom-right">右下角</option><option value="bottom-left">左下角</option><option value="top-right">右上角</option><option value="top-left">左上角</option></select>
+<label for="margin">边缘留白 <output id="marginVal">4%</output></label><input id="margin" type="range" min="0" max="15" value="4">
+<div class="check"><input id="shadow" type="checkbox" checked><label for="shadow" style="margin:0">添加轻微阴影，增强复杂背景可读性</label></div>
+<div class="settinggrid">
+<div><label for="format">导出格式</label><select id="format"><option value="original">尽量保持原格式</option><option value="image/png">PNG</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option></select></div>
+<div><label for="quality">JPG / WebP 质量 <output id="qualityVal">92%</output></label><input id="quality" type="range" min="50" max="100" value="92"></div>
+</div>
+<div class="actions"><button id="reset" class="btn">恢复默认</button><button id="processAll" class="btn primary">批量生成水印图片</button></div>
+<div class="status" id="status" role="status" aria-live="polite">先添加图片，然后调整水印样式。</div>
+</section>
+<section class="panel">
+<h2>实时预览 <span class="muted" id="previewMeta">· 尚未选择图片</span></h2>
+<div class="preview" id="preview"><div class="muted" style="text-align:center">添加图片后，这里会显示水印预览</div></div>
+<div class="actions"><button id="downloadOne" class="btn primary" disabled>下载当前图片</button><button id="downloadAll" class="btn" disabled>逐张下载全部结果</button></div>
+<p class="muted">预览会随设置变化；批量生成使用原图分辨率。为保护浏览器内存，建议一次处理不超过 100 张超大图片。</p>
+</section>
+</main>
+<footer>纳兰工具箱 · 图片水印工具。可见水印有助于标识来源，但不能完全阻止图片被复制或去除水印。</footer>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const state={files:[],active:0,mode:'text',logo:null,logoFile:null,results:[],busy:false};
+const controls=['watermarkText','font','color','fontSize','logoSize','opacity','angle','spacingX','spacingY','placement','margin','shadow','format','quality'];
+const rangeLabels={fontSize:'fontSizeVal',logoSize:'logoSizeVal',opacity:'opacityVal',angle:'angleVal',spacingX:'spacingXVal',spacingY:'spacingYVal',margin:'marginVal',quality:'qualityVal'};
+const num=id=>Number($(id).value);
+function updateLabels(){Object.entries(rangeLabels).forEach(([id,out])=>{const el=$(out);if(!el)return;let v=num(id);el.textContent=(id==='angle'?v+'°':v+'%')})}
+function selectedMode(){document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode));$('textSettings').classList.toggle('hidden',state.mode==='logo');$('logoSettings').classList.toggle('hidden',state.mode==='text')}
+function loadImage(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('无法读取图片：'+file.name))};img.src=url})}
+function currentFile(){return state.files[state.active]}
+function renderQueue(){const q=$('queue');q.replaceChildren();state.files.forEach((item,i)=>{const card=document.createElement('button');card.type='button';card.className='thumb'+(i===state.active?' active':'');card.title=item.file.name;const im=document.createElement('img');im.src=item.url;im.alt='';const name=document.createElement('span');name.textContent=item.file.name;card.append(im,name);card.addEventListener('click',()=>{state.active=i;renderQueue();renderPreview()});q.append(card)});$('queueStatus').textContent=state.files.length?'已添加 '+state.files.length+' 张图片':'尚未添加图片';$('previewMeta').textContent=currentFile()?'· '+currentFile().file.name+' · '+currentFile().img.naturalWidth+' × '+currentFile().img.naturalHeight:'· 尚未选择图片';$('downloadOne').disabled=!currentFile()||!state.results[state.active];$('downloadAll').disabled=!state.results.some(Boolean)}
+async function addFiles(fileList){const files=Array.from(fileList||[]).filter(f=>f.type.startsWith('image/'));if(!files.length)return;setStatus('正在读取图片…');for(const file of files){try{const img=await loadImage(file);state.files.push({file,img,url:URL.createObjectURL(file)})}catch(e){setStatus(e.message)}}state.results=[];state.active=Math.max(0,state.files.length-1);renderQueue();renderPreview();setStatus('已载入 '+state.files.length+' 张图片。所有图片均在本地处理。')}
+function setStatus(s){$('status').textContent=s}
+function drawWatermark(ctx,w,h,scale=1){const mode=state.mode,alpha=num('opacity')/100,angle=num('angle')*Math.PI/180,placement=$('placement').value,margin=num('margin')/100*Math.min(w,h);ctx.save();ctx.globalAlpha=alpha;ctx.rotate(angle);if($('shadow').checked){ctx.shadowColor='rgba(0,0,0,.22)';ctx.shadowBlur=Math.max(1,Math.min(w,h)*.004);ctx.shadowOffsetX=1;ctx.shadowOffsetY=1}
+let text=$('watermarkText').value.trim(),font=$('font').value,base=Math.max(8,Math.min(w,h)*num('fontSize')/100);ctx.fillStyle=$('color').value;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 '+base+'px "'+font.replace(/"/g,'')+'"';
+let logo=state.logo,logoW=Math.max(1,w*num('logoSize')/100),logoH=logo?logoW*logo.naturalHeight/logo.naturalWidth:0;
+function stamp(cx,cy){if((mode==='text'||mode==='both')&&text)ctx.fillText(text,cx,cy);if((mode==='logo'||mode==='both')&&logo){const drawW=mode==='both'?Math.min(logoW,Math.max(20,base*2.5)):logoW;const drawH=drawW*logo.naturalHeight/logo.naturalWidth;ctx.drawImage(logo,cx-drawW/2,cy-drawH/2,drawW,drawH)}}
+if(placement==='tile'){const tw=Math.max(base*4,logoW*.75,w*num('spacingX')/100),th=Math.max(base*2,logoH*.8,h*num('spacingY')/100);const span=Math.hypot(w,h);for(let y=-span;y<span;y+=th){for(let x=-span;x<span;x+=tw){stamp(x,y)}}}
+else{ctx.restore();ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle=$('color').value;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 '+base+'px \"'+font.replace(/\"/g,'')+'\"';if($('shadow').checked){ctx.shadowColor='rgba(0,0,0,.22)';ctx.shadowBlur=Math.max(1,Math.min(w,h)*.004);ctx.shadowOffsetX=1;ctx.shadowOffsetY=1}ctx.rotate(angle);let cx=w/2,cy=h/2;if(placement==='bottom-right'){cx=w-margin;cy=h-margin}else if(placement==='bottom-left'){cx=margin;cy=h-margin}else if(placement==='top-right'){cx=w-margin;cy=margin}else if(placement==='top-left'){cx=margin;cy=margin}stamp(cx,cy)}
+ctx.restore()}
+function makeCanvas(item,preview=false){const w=item.img.naturalWidth,h=item.img.naturalHeight,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.drawImage(item.img,0,0,w,h);drawWatermark(ctx,w,h,preview?1:1);return canvas}
+function renderPreview(){const host=$('preview');host.replaceChildren();const item=currentFile();if(!item){host.innerHTML='<div class="muted" style="text-align:center">添加图片后，这里会显示水印预览</div>';renderQueue();return}try{const canvas=makeCanvas(item,true);canvas.style.width='auto';canvas.style.height='auto';canvas.setAttribute('aria-label','水印预览');host.append(canvas)}catch(e){host.textContent='预览失败：'+e.message}renderQueue()}
+function outputType(item){const val=$('format').value;if(val!=='original')return val;const t=item.file.type;return ['image/png','image/jpeg','image/webp'].includes(t)?t:'image/png'}
+function extension(type){return type==='image/jpeg'?'jpg':type==='image/webp'?'webp':'png'}
+function canvasBlob(canvas,type,quality){return new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('图片导出失败，请尝试 PNG 格式')),type,quality))}
+async function processOne(i){const item=state.files[i],canvas=makeCanvas(item,false),type=outputType(item),blob=await canvasBlob(canvas,type,num('quality')/100);return {blob,name:item.file.name.replace(/\.[^.]+$/,'')+'-watermark.'+extension(type),type}}
+async function processAll(){if(!state.files.length){setStatus('请先添加图片。');return}if((state.mode==='logo'||state.mode==='both')&&!state.logo){setStatus('请先上传 Logo 图片，或切换到文字水印。');return}if(state.busy)return;state.busy=true;$('processAll').disabled=true;state.results=[];try{for(let i=0;i<state.files.length;i++){setStatus('正在生成 '+(i+1)+' / '+state.files.length+'：'+state.files[i].file.name);state.results[i]=await processOne(i);renderQueue()}setStatus('完成：已生成 '+state.results.length+' 张水印图片。');$('downloadAll').disabled=false;$('downloadOne').disabled=!state.results[state.active]}catch(e){setStatus('生成失败：'+e.message)}finally{state.busy=false;$('processAll').disabled=false}}
+function downloadResult(i){const r=state.results[i];if(!r)return;const url=URL.createObjectURL(r.blob),a=document.createElement('a');a.href=url;a.download=r.name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
+$('images').addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});$('addMore').addEventListener('click',()=>$('images').click());$('clear').addEventListener('click',()=>{state.files.forEach(x=>URL.revokeObjectURL(x.url));state.files=[];state.results=[];state.active=0;renderPreview();setStatus('列表已清空。')});
+$('logoFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{state.logo=await loadImage(f);state.logoFile=f;if(state.mode==='text'){state.mode='logo';selectedMode()}renderPreview();setStatus('Logo 已在本地载入。')}catch(err){setStatus(err.message)}});
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.mode;selectedMode();renderPreview()}));
+controls.forEach(id=>$(id).addEventListener('input',()=>{updateLabels();state.results=[];$('downloadAll').disabled=true;$('downloadOne').disabled=true;renderPreview()}));
+$('reset').addEventListener('click',()=>{const defaults={watermarkText:'AVENELLE',font:'Arial',color:'#ffffff',fontSize:5,logoSize:20,opacity:35,angle:-30,spacingX:22,spacingY:20,placement:'tile',margin:4,shadow:true,format:'original',quality:92};Object.entries(defaults).forEach(([id,v])=>{if($(id).type==='checkbox')$(id).checked=v;else $(id).value=v});state.mode='text';selectedMode();updateLabels();state.results=[];renderPreview();setStatus('已恢复默认设置。')});
+$('processAll').addEventListener('click',processAll);$('downloadOne').addEventListener('click',()=>downloadResult(state.active));$('downloadAll').addEventListener('click',async()=>{for(let i=0;i<state.results.length;i++){if(state.results[i]){downloadResult(i);await new Promise(r=>setTimeout(r,180))}}});
+const drop=document.querySelector('.drop');['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='var(--accent)'}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='';if(ev==='drop')addFiles(e.dataTransfer.files)}));
+updateLabels();selectedMode();renderQueue();
+})();
+</script>
+</body>
+</html>
