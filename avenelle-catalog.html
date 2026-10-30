@@ -134,7 +134,7 @@ function buildProduct(p,opts,index,total){
  '<section class="content-page"><div class="section-kicker">01 / PRODUCT STORY</div><h2>产品介绍</h2><p class="lead">'+escapeHtml(intro)+'</p><p>'+escapeHtml(story)+'</p><div class="details">'+line('商品分类',value(p,'商品分类'))+line('商品系列',value(p,'商品系列'))+line('商品风格',value(p,'商品定位/风格'))+line('适用场景',value(p,'适用场景'))+line('面料成分',value(p,'面料成分'))+line('补充材质',value(p,'里料/裆料等补充材质'))+line('面料特点',value(copy,'面料与触感描述')||value(p,'面料特点'))+line('版型特点',value(copy,'版型与穿着体验')||value(p,'版型/结构特点'))+line('工艺细节',value(copy,'工艺亮点')||value(p,'工艺细节'))+price+'</div></section>'+
  (gallery.length?'<section class="content-page"><div class="section-kicker">02 / DETAILS & CRAFT</div><h2>细节与工艺</h2><div class="gallery">'+gallery.map(imageTag).join('')+'</div></section>':'')+
  (opts.sku||opts.care?'<section class="content-page"><div class="section-kicker">03 / PRODUCT INFORMATION</div><h2>商品信息</h2>'+skuHtml+care+'</section>':'')+
- '<div class="page-footer">AVENELLE <span>'+String(index+1).padStart(2,'0')+' / '+String(total).padStart(2,'0')+'</span></div></article>';
+ '</article>';
 }
 function generate(){
  const ids=selectedIds(),mode=document.querySelector('input[name="mode"]:checked').value;
