@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AVENELLE 商品画册生成器</title>
+<meta name="description" content="在浏览器本地读取 AVENELLE 商品 Excel 与图片，生成品牌商品展示 PDF。">
+<style>
+:root{--ink:#242424;--muted:#77736d;--gold:#b49a6a;--paper:#f6f5f2;--line:#e6e2da;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:#f5f4f1;color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+header{background:#222;color:#fff;padding:24px max(22px,calc((100% - 1100px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{font-family:Georgia,serif;font-size:28px;letter-spacing:5px}.brand small{display:block;font:10px Arial,sans-serif;letter-spacing:3px;color:#c9b58f;margin-top:5px}
+header a{color:#eee;text-decoration:none;font-size:13px}
+main{max-width:1100px;margin:34px auto;padding:0 20px 60px}.intro{margin-bottom:26px}.eyebrow{font-size:11px;letter-spacing:2px;color:var(--gold);font-weight:700}.intro h1{font:400 30px Georgia,"Microsoft YaHei",serif;margin:8px 0}.intro p{color:var(--muted);font-size:14px;line-height:1.8;margin:0}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;margin:16px 0;box-shadow:0 5px 22px #24242408}
+.panel h2{font-size:16px;margin:0 0 8px}.hint{font-size:12px;color:var(--muted);line-height:1.7}
+.uploads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}.drop{border:1px dashed #c9c1b3;border-radius:12px;padding:20px;background:#fcfbf9;min-height:120px}.drop strong{display:block;font-size:14px;margin-bottom:8px}.drop input{width:100%;font-size:13px}
+.status{margin-top:12px;padding:10px 12px;background:#f4f2ed;border-radius:9px;font-size:12px;color:#625d55;min-height:38px}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0}.btn{border:0;border-radius:9px;padding:11px 16px;background:#262626;color:#fff;font-weight:600;font-size:13px;cursor:pointer}.btn.secondary{background:#f1efe9;color:#39352f;border:1px solid var(--line)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px;margin-top:15px}.product{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;gap:10px;background:#fff}.product input{margin-top:4px;accent-color:#9b8359}.product b{display:block;font-size:13px;line-height:1.5}.product small{display:block;color:var(--muted);margin-top:5px;font-size:11px;line-height:1.5}
+.options{display:flex;flex-wrap:wrap;gap:18px;margin:14px 0}.options label{font-size:13px;display:flex;align-items:center;gap:7px}
+.notice{border-left:3px solid var(--gold);padding:10px 13px;background:#faf8f3;color:#6f6658;font-size:12px;line-height:1.7;margin-top:14px}
+footer{text-align:center;color:#999;font-size:11px;padding:24px}
+@media(max-width:650px){header{padding:18px 20px}.brand{font-size:23px}.uploads{grid-template-columns:1fr}main{margin-top:24px}.panel{padding:17px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<header><div class="brand">AVENELLE<small>PRODUCT CATALOG STUDIO</small></div><a href="index.html">返回 Nalan 工具箱 ↗</a></header>
+<main>
+<section class="intro"><div class="eyebrow">LOCAL-FIRST · PRIVATE BY DESIGN</div><h1>商品画册生成器</h1><p>上传商品标准资料 Excel 与商品图片，在本机浏览器完成资料匹配和画册排版。商品文件不会上传到服务器。</p></section>
+<section class="panel">
+<h2>01 / 导入商品资料</h2><div class="hint">使用《AVENELLE 商品标准资料模板.xlsx》。请保留工作表名称及第 4 行字段标题。</div>
+<div class="uploads">
+<div class="drop"><strong>商品 Excel 文件</strong><input id="excelFile" type="file" accept=".xlsx,.xls"></div>
+<div class="drop"><strong>商品图片（可多选）</strong><input id="imageFiles" type="file" accept="image/*" multiple><div class="hint" style="margin-top:8px">可选择主图、模特图、细节图和颜色图。图片按素材表文件名匹配；未填图片 URL 时也可通过文件名匹配。</div></div>
+</div>
+<div id="status" class="status" role="status">等待导入 Excel 文件。</div>
+</section>
+<section class="panel">
+<h2>02 / 选择需要生成的商品</h2><div class="hint">商品列表读取自「商品主档」。仅选择资料完整且已准备好图片的商品。</div>
+<div class="toolbar"><button class="btn secondary" id="selectAll" disabled>全选</button><button class="btn secondary" id="selectNone" disabled>清空选择</button><span class="hint" id="count">尚未载入商品</span></div>
+<div id="products" class="products"><div class="hint">导入 Excel 后，这里会显示商品清单。</div></div>
+</section>
+<section class="panel">
+<h2>03 / 画册输出设置</h2>
+<div class="options">
+<label><input type="radio" name="mode" value="single" checked> 单品画册（仅选择一款）</label>
+<label><input type="radio" name="mode" value="collection"> 多款合集（按选择顺序排版）</label>
+</div>
+<div class="options">
+<label><input type="checkbox" id="includeSku" checked> 包含颜色与尺码信息</label>
+<label><input type="checkbox" id="includeCare" checked> 包含洗护与购买提示</label>
+<label><input type="checkbox" id="includePrice"> 显示建议零售价/日常售价</label>
+</div>
+<div class="notice">隐私提示：商品 Excel 和本地图片只在当前浏览器内读取。PDF 使用浏览器的「打印 / 另存为 PDF」功能生成。默认不显示 SKU 成本等内部经营数据。</div>
+<div class="toolbar"><button class="btn" id="generate" disabled>生成商品 PDF</button><span class="hint">点击后会打开排版预览，在打印窗口选择「另存为 PDF」。</span></div>
+</section>
+</main>
+<footer>AVENELLE · THE ART OF EVERYDAY ELEGANCE</footer>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+let workbook=null, products=[], skuRows=[], imageRows=[], copyRows=[], localImages=[];
+const text=v=>String(v==null?'':v).trim();
+const money=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?'¥ '+n.toFixed(2):''};
+function setStatus(msg){$('status').textContent=msg}
+function sheetRows(name){const sh=workbook&&workbook.Sheets[name];return sh?XLSX.utils.sheet_to_json(sh,{defval:'',raw:false}):[]}
+function value(row,key){return text(row&&row[key])}
+function loadWorkbook(file){
+ if(!window.XLSX){setStatus('Excel 解析组件加载失败。请检查网络后刷新页面重试。');return}
+ const reader=new FileReader();
+ reader.onload=e=>{
+  try{
+   workbook=XLSX.read(e.target.result,{type:'array'});
+   products=sheetRows('商品主档').filter(r=>value(r,'商品ID（唯一）')&&value(r,'商品名称'));
+   skuRows=sheetRows('SKU规格');
+   imageRows=sheetRows('图片素材');
+   copyRows=sheetRows('展示文案');
+   renderProducts();
+   const missing=['商品主档','SKU规格','图片素材','展示文案'].filter(n=>!workbook.Sheets[n]);
+   setStatus('读取成功：'+products.length+' 款商品、'+skuRows.length+' 条 SKU、'+imageRows.length+' 条图片素材。'+(missing.length?'缺少工作表：'+missing.join('、'):'工作表结构完整。'));
+  }catch(err){setStatus('读取失败：请确认上传的是 AVENELLE 商品标准资料模板。'+err.message)}
+ };
+ reader.onerror=()=>setStatus('文件读取失败，请重新选择 Excel。');
+ reader.readAsArrayBuffer(file);
+}
+function renderProducts(){
+ const box=$('products');box.innerHTML='';
+ if(!products.length){box.innerHTML='<div class="hint">没有找到商品。请检查「商品主档」第 5 行开始是否有商品资料。</div>'}
+ products.forEach((p,i)=>{
+  const id=value(p,'商品ID（唯一）'),name=value(p,'商品名称'),status=value(p,'商品状态')||'未设置状态';
+  const label=document.createElement('label');label.className='product';
+  const cb=document.createElement('input');cb.type='checkbox';cb.value=id;cb.className='product-check';cb.addEventListener('change',updateCount);
+  const body=document.createElement('span');body.innerHTML='<b></b><small></small>';
+  body.querySelector('b').textContent=name;body.querySelector('small').textContent=id+' · '+status;
+  label.append(cb,body);box.append(label);
+ });
+ $('selectAll').disabled=!products.length;$('selectNone').disabled=!products.length;
+ updateCount();
+}
+function selectedIds(){return Array.from(document.querySelectorAll('.product-check:checked')).map(x=>x.value)}
+function updateCount(){const n=selectedIds().length;$('count').textContent='已选择 '+n+' / '+products.length+' 款';$('generate').disabled=!workbook||!n}
+function imageSrcFor(row,productId){
+ const url=value(row,'图片URL（或存储路径）');
+ if(url&&/^https?:\/\//i.test(url))return url;
+ const filename=value(row,'文件名/素材名称');
+ const candidates=localImages.filter(f=>filename&&f.name.toLowerCase()===filename.toLowerCase());
+ const prefixed=localImages.filter(f=>f.name.toLowerCase().startsWith(productId.toLowerCase()));
+ const f=candidates[0]||prefixed[Number(row['排序']||1)-1]||prefixed[0];
+ return f?URL.createObjectURL(f):'';
+}
+function productImages(id){
+ return imageRows.filter(r=>value(r,'商品ID')===id).sort((a,b)=>(Number(a['排序'])||999)-(Number(b['排序'])||999)).map(r=>({src:imageSrcFor(r,id),type:value(r,'素材类型'),caption:value(r,'图片说明/拍摄角度')||value(r,'文件名/素材名称')})).filter(x=>x.src);
+}
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function line(label,val){return text(val)?'<div class="spec"><span>'+escapeHtml(label)+'</span><b>'+escapeHtml(val)+'</b></div>':''}
+function findCopy(id){return copyRows.find(r=>value(r,'商品ID')===id)||{}}
+function findSkus(id){return skuRows.filter(r=>value(r,'商品ID')===id)}
+function buildProduct(p,opts,index,total){
+ const id=value(p,'商品ID（唯一）'),name=value(p,'商品名称'),copy=findCopy(id),images=productImages(id),skus=findSkus(id);
+ const title=value(copy,'PDF封面标题')||name,sub=value(copy,'PDF副标题/一句话卖点')||value(p,'核心卖点（3条以内）');
+ const main=images.find(x=>x.type==='主图')||images.find(x=>x.type==='模特图')||images[0];
+ const gallery=images.filter(x=>x!==main);
+ const imageTag=x=>'<figure><img src="'+escapeHtml(x.src)+'" alt="'+escapeHtml(x.caption)+'"><figcaption>'+escapeHtml(x.caption||x.type)+'</figcaption></figure>';
+ const price=opts.price?line('建议零售价',money(p['建议零售价（元）']))+line('日常售价',money(p['日常售价（元）'])):'';
+ const skuHtml=opts.sku?'<section class="block"><h2>颜色与尺码</h2>'+line('颜色',value(p,'颜色集合'))+line('尺码范围',value(p,'尺码范围'))+(skus.length?'<div class="sku-grid">'+skus.map(s=>'<span>'+escapeHtml(value(s,'颜色'))+' / '+escapeHtml(value(s,'尺码'))+'</span>').join('')+'</div>':'')+'</section>':'';
+ const care=opts.care?'<section class="block"><h2>洗护与购买提示</h2><p>'+escapeHtml(value(copy,'洗护说明')||value(p,'洗护说明'))+'</p><p>'+escapeHtml(value(p,'注意事项/购买提示'))+'</p></section>':'';
+ const story=value(copy,'品牌故事/设计灵感')||value(p,'商品简介（约80-150字）');
+ const intro=value(copy,'商品核心介绍')||value(p,'商品简介（约80-150字）');
+ return '<article class="product-page">'+
+ '<section class="cover"><div class="cover-brand">AVENELLE</div><div class="cover-kicker">PRODUCT COLLECTION</div>'+(main?'<img class="hero" src="'+escapeHtml(main.src)+'" alt="'+escapeHtml(name)+'">':'<div class="empty-hero">请在图片素材表添加商品主图</div>')+'<div class="cover-title"><div class="overline">'+escapeHtml(value(p,'商品系列')||'COLLECTION')+'</div><h1>'+escapeHtml(title)+'</h1><p>'+escapeHtml(sub)+'</p><span>'+escapeHtml(id)+'</span></div><div class="cover-foot">THE ART OF EVERYDAY ELEGANCE</div></section>'+
+ '<section class="content-page"><div class="section-kicker">01 / PRODUCT STORY</div><h2>产品介绍</h2><p class="lead">'+escapeHtml(intro)+'</p><p>'+escapeHtml(story)+'</p><div class="details">'+line('商品分类',value(p,'商品分类'))+line('商品系列',value(p,'商品系列'))+line('商品风格',value(p,'商品定位/风格'))+line('适用场景',value(p,'适用场景'))+line('面料成分',value(p,'面料成分'))+line('补充材质',value(p,'里料/裆料等补充材质'))+line('面料特点',value(copy,'面料与触感描述')||value(p,'面料特点'))+line('版型特点',value(copy,'版型与穿着体验')||value(p,'版型/结构特点'))+line('工艺细节',value(copy,'工艺亮点')||value(p,'工艺细节'))+price+'</div></section>'+
+ (gallery.length?'<section class="content-page"><div class="section-kicker">02 / DETAILS & CRAFT</div><h2>细节与工艺</h2><div class="gallery">'+gallery.map(imageTag).join('')+'</div></section>':'')+
+ (opts.sku||opts.care?'<section class="content-page"><div class="section-kicker">03 / PRODUCT INFORMATION</div><h2>商品信息</h2>'+skuHtml+care+'</section>':'')+
+ '<div class="page-footer">AVENELLE <span>'+String(index+1).padStart(2,'0')+' / '+String(total).padStart(2,'0')+'</span></div></article>';
+}
+function generate(){
+ const ids=selectedIds(),mode=document.querySelector('input[name="mode"]:checked').value;
+ if(mode==='single'&&ids.length!==1){alert('单品画册模式请只选择一款商品；多款请切换为合集模式。');return}
+ const chosen=products.filter(p=>ids.includes(value(p,'商品ID（唯一）')));
+ const opts={sku:$('includeSku').checked,care:$('includeCare').checked,price:$('includePrice').checked};
+ const html=chosen.map((p,i)=>buildProduct(p,opts,i,chosen.length)).join('');
+ const win=window.open('','_blank');
+ if(!win){alert('浏览器阻止了弹出窗口，请允许此网站打开新窗口后重试。');return}
+ win.document.open();
+ win.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>AVENELLE 商品画册</title><style>'+
+ '@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;color:#242424;font-family:"Microsoft YaHei",Arial,sans-serif}.product-page{position:relative;page-break-after:always;break-after:page}.product-page:last-child{page-break-after:auto;break-after:auto}.cover{height:297mm;padding:17mm 18mm 16mm;display:flex;flex-direction:column;align-items:center;position:relative}.cover-brand{font:26px Georgia,serif;letter-spacing:7px;margin:3mm 0 2mm}.cover-kicker,.section-kicker{font:9px Arial,sans-serif;letter-spacing:3px;color:#a88f60}.hero{width:100%;height:160mm;object-fit:cover;margin-top:10mm}.empty-hero{width:100%;height:160mm;background:#f3f1ec;display:grid;place-items:center;color:#999;margin-top:10mm}.cover-title{text-align:center;margin-top:9mm}.cover-title .overline{font-size:9px;letter-spacing:2px;color:#a88f60}.cover-title h1{font:25px Georgia,"Microsoft YaHei",serif;margin:5mm 0 3mm}.cover-title p{font-size:11px;color:#777}.cover-title span{font-size:9px;color:#aaa;letter-spacing:1px}.cover-foot{position:absolute;bottom:13mm;font:8px Arial,sans-serif;letter-spacing:3px;color:#999}.content-page{min-height:297mm;padding:22mm 20mm 23mm;page-break-after:always;break-after:page}.content-page:last-of-type{page-break-after:auto}.content-page h2{font:24px Georgia,"Microsoft YaHei",serif;margin:5mm 0 10mm}.content-page p{font-size:11px;line-height:2;color:#57534e;white-space:pre-wrap}.content-page .lead{font-size:14px;color:#282522}.details{margin-top:12mm;border-top:1px solid #e7e2d9}.spec{display:flex;gap:12mm;padding:4mm 2mm;border-bottom:1px solid #e7e2d9;font-size:10px;line-height:1.6}.spec span{width:32mm;flex:none;color:#999}.spec b{font-weight:500;color:#333}.gallery{display:grid;grid-template-columns:1fr 1fr;gap:7mm}.gallery figure{margin:0;break-inside:avoid}.gallery img{width:100%;height:82mm;object-fit:cover;background:#f3f1ec}.gallery figcaption{font-size:9px;color:#888;margin-top:2mm}.block{margin-top:12mm}.block h2{font-size:17px;margin:0 0 5mm}.sku-grid{display:flex;flex-wrap:wrap;gap:3mm;margin-top:5mm}.sku-grid span{border:1px solid #e7e2d9;padding:2mm 4mm;font-size:9px}.page-footer{padding:0 20mm 10mm;font:8px Arial,sans-serif;letter-spacing:2px;color:#999;display:flex;justify-content:space-between}@media screen{body{background:#e9e7e2}.product-page{width:210mm;margin:12px auto;background:#fff;box-shadow:0 2px 20px #0001}.cover,.content-page{min-height:297mm}}'+
+ '</style></head><body>'+html+'<script>window.addEventListener("load",function(){const imgs=[...document.images];Promise.all(imgs.map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r}))).then(()=>setTimeout(()=>window.print(),500))});<\/script></body></html>');
+ win.document.close();
+}
+$('excelFile').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadWorkbook(f)});
+$('imageFiles').addEventListener('change',e=>{localImages=Array.from(e.target.files||[]);setStatus('已选择 '+localImages.length+' 张本地图片。图片只在当前浏览器使用。');if(workbook)renderProducts()});
+$('selectAll').addEventListener('click',()=>{document.querySelectorAll('.product-check').forEach(x=>x.checked=true);updateCount()});
+$('selectNone').addEventListener('click',()=>{document.querySelectorAll('.product-check').forEach(x=>x.checked=false);updateCount()});
+$('generate').addEventListener('click',generate);
+})();
+</script>
+</body>
+</html>
