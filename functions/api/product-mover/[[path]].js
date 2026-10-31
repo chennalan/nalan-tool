@@ -1,6 +1,7 @@
 import { kuaishouGetItem, kuaishouEditItem } from "./_lib/kuaishou.js";
 
 const PLATFORMS = ["douyin", "kuaishou", "wechat"];
+const SOURCE_PLATFORMS = ["weigou"];
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS }); }
 function has(env, key) { return Boolean(env[key]); }
@@ -42,6 +43,16 @@ export async function onRequest({ request, env }) {
     return json({ ok: true, service: "nalan-product-mover-api", version: 2, mode: "adapter-scaffold" });
   if (resource === "platforms" && request.method === "GET")
     return json({ ok: true, platforms: PLATFORMS.map(p => statusFor(env, p)) });
+
+  // Weigou is currently an Excel-import source, not an API-connected target.
+  // Do not invent endpoints or attempt undocumented/private requests.
+  if (resource === "sources" && platform === "weigou" && action === "status" && request.method === "GET")
+    return json({ ok: true, source: "weigou", mode: "official_excel_import",
+      api: { configured: false, connection: "not_available",
+        note: "No verifiable public product API specification or merchant authorization contract is available in this project. Use the official Excel export/import workflow until Weigou supplies approved documentation." },
+      supported: ["xlsx", "xls", "csv", "json"],
+      officialGuide: "https://www.wegooooo.com/article/254",
+      contact: { phone: "0755-86700596", email: "service@wegooooo.com" } });
 
   if (!requireAdmin(request, env))
     return json({ ok: false, code: "UNAUTHORIZED", message: "需要服务端管理会话；禁止把管理密钥放入公开前端。" }, 401);
