@@ -70,10 +70,11 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0}td input{min-width:90p
  </section>
  <section class="panel p-5">
   <h2 class="font-bold">平台 API 接入状态</h2><p class="text-sm text-slate-500 mt-1">当前为本地资料处理原型，未连接任何店铺，也不会发布或修改线上商品。平台商品接口、授权与权限需分别核验。微购相册已加入来源导入映射；官方开放 API 尚待微购方提供接口文档与接入授权。</p>
-  <div class="grid md:grid-cols-3 gap-3 mt-4">
+  <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
    <div class="rounded-xl bg-slate-50 p-4"><b>抖音小店</b><p class="text-xs text-emerald-700 mt-2">官方商品管理 API 明确；待服务商入驻、商品权限申请及店铺授权</p><a class="text-xs text-blue-700 underline mt-2 inline-block" href="https://op.jinritemai.com/api-docs" target="_blank" rel="noopener">抖店开放平台文档 ↗</a></div>
-   <div class="rounded-xl bg-slate-50 p-4"><b>快手小店</b><p class="text-xs text-amber-700 mt-2">已确认电商开放产品；普通小店商品 API 范围仍待官方确认，不能以小程序挂载接口替代</p><a class="text-xs text-blue-700 underline mt-2 inline-block" href="https://open.kuaishou.com/platform/openApi" target="_blank" rel="noopener">快手开放平台 ↗</a></div>
+   <div class="rounded-xl bg-slate-50 p-4"><b>快手小店</b><p class="text-xs text-amber-700 mt-2">已确认普通小店商品详情/编辑接口；列表、图片、SKU/库存和 OAuth 仍在接入</p><a class="text-xs text-blue-700 underline mt-2 inline-block" href="https://open.kuaishou.com/platform/openApi" target="_blank" rel="noopener">快手开放平台 ↗</a></div>
    <div class="rounded-xl bg-slate-50 p-4"><b>微信小店</b><p class="text-xs text-amber-700 mt-2">需以视频号小店现行 API 和商家权限为准；不使用旧版公众号微信小店接口</p><a class="text-xs text-blue-700 underline mt-2 inline-block" href="https://developers.weixin.qq.com/doc/channels/API/channels-shop-product/shop/" target="_blank" rel="noopener">视频号小店 API 文档 ↗</a></div>
+   <div class="rounded-xl bg-slate-50 p-4"><b>微购相册（来源）</b><p class="text-xs text-emerald-700 mt-2">已加入官方 Excel 批量导出导入映射；商品 API 需微购方提供开发者文档与授权</p><a class="text-xs text-blue-700 underline mt-2 inline-block" href="https://www.wegooooo.com/article/254" target="_blank" rel="noopener">官方批量导出说明 ↗</a></div>
   </div>
   <p class="text-xs text-slate-500 mt-4">查看 <a class="text-blue-700 underline" href="PRODUCT-MOVER-API-RESEARCH.md" target="_blank" rel="noopener">三平台 API 接入核验报告</a>。正式 API 模式需要服务端加密保存授权凭证，并按目标店铺重新匹配类目、品牌资质、运费模板和商品属性。不会模拟登录、抓取后台页面或绕过平台限制。</p>
  </section>
