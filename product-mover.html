@@ -63,18 +63,18 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0}td input{min-width:90p
   <div class="flex flex-wrap gap-2"><button id="applyBatch" class="btn primary">应用批量修改</button><button id="resetBatch" class="btn soft">撤销批量修改</button><span id="batchStatus" class="text-sm text-slate-500 self-center"></span></div>
  </section>
  <section class="panel p-5 space-y-4">
-  <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-bold">商品预览</h2><p class="text-sm text-slate-500">可直接修改标题、价格、库存、图片链接和详情</p></div><div class="flex gap-2"><button id="exportCsv" class="btn soft">导出 CSV</button><button id="exportXlsx" class="btn primary">导出 Excel</button></div></div>
+  <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-bold">商品预览与发布前检查</h2><p class="text-sm text-slate-500">可直接修改标题、价格、库存、图片链接和详情；检查结果仅用于资料预检</p></div><div class="flex flex-wrap gap-2"><button id="validate" class="btn soft">检查商品资料</button><button id="exportCsv" class="btn soft">导出通用 CSV</button><button id="exportXlsx" class="btn primary">导出通用 Excel</button></div></div><div id="validation" class="hidden rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm"></div>
   <div class="table-wrap rounded-xl border border-slate-200"><table class="w-full"><thead><tr><th>标题</th><th>编码 / SKU</th><th>售价</th><th>库存</th><th>颜色</th><th>尺码</th><th>主图 URL</th><th>商品详情</th></tr></thead><tbody id="rows"><tr><td colspan="8" class="text-center text-slate-400 py-10">请导入商品文件或载入示例商品</td></tr></tbody></table></div>
   <div class="flex flex-wrap justify-between gap-2 text-xs text-slate-500"><span>提示：商品图片目前按 URL 字段迁移；后续接入平台授权后再执行图片上传与平台发布。</span><span id="summary">尚未导入数据</span></div>
  </section>
  <section class="panel p-5">
-  <h2 class="font-bold">平台 API 接入状态</h2><p class="text-sm text-slate-500 mt-1">当前为本地资料处理原型，未连接任何店铺，也不会发布或修改线上商品。</p>
+  <h2 class="font-bold">平台 API 接入状态</h2><p class="text-sm text-slate-500 mt-1">当前为本地资料处理原型，未连接任何店铺，也不会发布或修改线上商品。平台商品接口、授权与权限需分别核验。</p>
   <div class="grid md:grid-cols-3 gap-3 mt-4">
-   <div class="rounded-xl bg-slate-50 p-4"><b>抖音小店</b><p class="text-xs text-amber-700 mt-2">待申请/配置官方开放平台应用与商品权限</p></div>
-   <div class="rounded-xl bg-slate-50 p-4"><b>快手小店</b><p class="text-xs text-amber-700 mt-2">待申请/配置官方开放平台应用与商品权限</p></div>
-   <div class="rounded-xl bg-slate-50 p-4"><b>微信小店</b><p class="text-xs text-amber-700 mt-2">待核实当前开放接口、商家授权和发布权限</p></div>
+   <div class="rounded-xl bg-slate-50 p-4"><b>抖音小店</b><p class="text-xs text-emerald-700 mt-2">官方商品管理 API 明确；待服务商入驻、商品权限申请及店铺授权</p><a class="text-xs text-blue-700 underline mt-2 inline-block" href="https://op.jinritemai.com/api-docs" target="_blank" rel="noopener">抖店开放平台文档 ↗</a></div>
+   <div class="rounded-xl bg-slate-50 p-4"><b>快手小店</b><p class="text-xs text-amber-700 mt-2">已确认电商开放产品；普通小店商品 API 范围仍待官方确认，不能以小程序挂载接口替代</p><a class="text-xs text-blue-700 underline mt-2 inline-block" href="https://open.kuaishou.com/platform/openApi" target="_blank" rel="noopener">快手开放平台 ↗</a></div>
+   <div class="rounded-xl bg-slate-50 p-4"><b>微信小店</b><p class="text-xs text-amber-700 mt-2">需以视频号小店现行 API 和商家权限为准；不使用旧版公众号微信小店接口</p><a class="text-xs text-blue-700 underline mt-2 inline-block" href="https://developers.weixin.qq.com/doc/channels/API/channels-shop-product/shop/" target="_blank" rel="noopener">视频号小店 API 文档 ↗</a></div>
   </div>
-  <p class="text-xs text-slate-500 mt-4">正式 API 模式需要服务端安全保存授权凭证，并按各平台审核、类目、品牌、运费模板及商品发布规则分别适配。不会通过模拟登录、抓取后台页面或绕过平台限制来搬家。</p>
+  <p class="text-xs text-slate-500 mt-4">查看 <a class="text-blue-700 underline" href="PRODUCT-MOVER-API-RESEARCH.md" target="_blank" rel="noopener">三平台 API 接入核验报告</a>。正式 API 模式需要服务端加密保存授权凭证，并按目标店铺重新匹配类目、品牌资质、运费模板和商品属性。不会模拟登录、抓取后台页面或绕过平台限制。</p>
  </section>
 </main>
 <script>
@@ -110,6 +110,20 @@ $('file').addEventListener('change',async e=>{
 $('demo').onclick=()=>{products=[{title:'AVENELLE 法式蕾丝睡衣套装',sku:'AV-001',price:159,stock:100,color:'黑色',size:'M',image:'https://example.com/main.jpg',detail:'轻柔面料，蕾丝拼接'}, {title:'AVENELLE 纯棉家居服',sku:'AV-002',price:129,stock:80,color:'米白',size:'L',image:'https://example.com/detail.jpg',detail:'纯棉舒适家居服'}];saveOriginal();render();$('fileStatus').textContent='已载入示例数据（示例图片地址不可直接发布）'};
 $('template').onclick=()=>downloadBook('Nalan-商品搬家通用模板.xlsx',[{商品标题:'示例商品',商品编码:'DEMO-001',售价:99,库存:100,颜色:'黑色',尺码:'M',主图URL:'https://example.com/image.jpg',商品详情:'商品描述'}]);
 $('clear').onclick=()=>{products=[];original=[];rawRows=[];$('file').value='';render();$('fileStatus').textContent='已清空当前页面数据'};
+$('validate').onclick=()=>{
+ if(!products.length){$('validation').classList.remove('hidden');$('validation').textContent='请先导入商品资料。';return}
+ const seen=new Set(),issues=[];
+ products.forEach((p,i)=>{
+  const no=i+1;
+  if(!String(p.title||'').trim())issues.push('第 '+no+' 行：缺少商品标题');
+  if(!(Number(p.price)>0))issues.push('第 '+no+' 行：售价必须大于 0');
+  if(!Number.isFinite(Number(p.stock))||Number(p.stock)<0)issues.push('第 '+no+' 行：库存必须为非负数字');
+  if(p.sku){if(seen.has(String(p.sku)))issues.push('第 '+no+' 行：商品编码重复（'+p.sku+'）');seen.add(String(p.sku))}
+  if(p.image&&!/^https?:\\/\\//i.test(String(p.image)))issues.push('第 '+no+' 行：主图 URL 不是 HTTP/HTTPS 地址');
+ });
+ const box=$('validation');box.classList.remove('hidden');
+ box.innerHTML=issues.length?'<b class="text-amber-800">发现 '+issues.length+' 项需要处理</b><ul class="list-disc pl-5 mt-2 space-y-1">'+issues.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<b class="text-emerald-700">基础资料检查通过</b><p class="mt-1 text-slate-600">这不代表平台审核通过；目标平台类目、资质、规格、图片规则和运费模板仍需单独校验。</p>';
+};
 $('applyMap').onclick=()=>{if(!rawRows.length){$('fileStatus').textContent='请先导入商品文件或载入示例商品';return}products=rawRows.map(normalize);saveOriginal();render();$('fileStatus').textContent='字段映射已重新应用到 '+products.length+' 件商品'};
 $('applyBatch').onclick=()=>{
  if(!products.length)return;
