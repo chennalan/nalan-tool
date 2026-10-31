@@ -27,7 +27,8 @@
 
 ## 当前可用接口
 - `GET /api/product-mover/health`：健康检查。
-- `GET /api/product-mover/platforms`：检查服务端变量是否已填写（不暴露变量值）。
+- `GET /api/product-mover/platforms`：检查三个目标平台服务端变量是否已填写（不暴露变量值）。
+- `GET /api/product-mover/sources/weigou/status`：微购相册来源状态；当前明确返回官方 Excel 导入模式和 API 未配置状态，不会调用微购 API。
 - `GET /api/product-mover/products/kuaishou/{itemId}`：快手商品详情只读接口，需管理端授权。
 - `POST /api/product-mover/products/kuaishou/edit`：快手编辑接口已接入，但默认由 `PRODUCT_MOVER_WRITE_ENABLED` 关闭，且要求单商品确认头；不要在未测试前开启。
 
@@ -36,3 +37,10 @@
 - 抖店完整商品 API、OAuth、签名与素材上传。
 - 视频号小店完整商品 API、授权与素材上传。
 - Token 加密持久化：当前项目没有专用 D1/KV 绑定；本次未创建或复用任何数据库。
+
+
+## 微购相册（来源平台）
+- 当前不需要任何微购 API 环境变量。
+- 官方 Excel 导出/导入是当前支持路径。
+- 只有在微购科技提供正式 API 文档、应用授权和商用许可后，才新增服务端 Secret；不在浏览器保存凭证。
+- 详细接入清单见 `PRODUCT-MOVER-WEIGOU-ADAPTER.md`。
