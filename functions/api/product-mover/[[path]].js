@@ -29,7 +29,7 @@ function pending(platform, feature) {
 }
 export async function onRequest({ request, env }) {
   const url = new URL(request.url);
-  const parts = url.pathname.replace(/^\\/api\\/product-mover\\/?/, "").split("/").filter(Boolean);
+  const routePath = url.pathname.startsWith("/api/product-mover/") ? url.pathname.slice("/api/product-mover/".length) : "";\n  const parts = routePath.split("/").filter(Boolean);
   const [resource, platform, action] = parts;
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: {
     "access-control-allow-origin": env.ALLOWED_ORIGIN || url.origin,
