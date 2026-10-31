@@ -1,123 +1,81 @@
-/**
- * Nalan Product Mover — Cloudflare Pages Function API
- *
- * Credentials are read only from Cloudflare Pages Environment Variables.
- * Never return secrets or access tokens to the browser.
- *
- * This is a secure integration scaffold. Platform-specific signing, OAuth
- * endpoints and payload schemas must be filled from each merchant's approved
- * official API documentation; no undocumented endpoint is guessed here.
- */
+import { kuaishouGetItem, kuaishouEditItem } from "./_lib/kuaishou.js";
+
 const PLATFORMS = ["douyin", "kuaishou", "wechat"];
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
-}
-function platformConfig(env, platform) {
-  const prefix = platform.toUpperCase();
-  return {
-    clientId: env[`${prefix}_CLIENT_ID`] || "",
-    clientSecret: env[`${prefix}_CLIENT_SECRET`] || "",
-    authorizeUrl: env[`${prefix}_AUTHORIZE_URL`] || "",
-    tokenUrl: env[`${prefix}_TOKEN_URL`] || "",
-    apiBaseUrl: env[`${prefix}_API_BASE_URL`] || "",
-    redirectUri: env[`${prefix}_REDIRECT_URI`] || "",
-  };
-}
-function isConfigured(c) {
-  return Boolean(c.clientId && c.clientSecret && c.authorizeUrl && c.tokenUrl && c.redirectUri);
-}
-function safePlatformStatus(env, platform) {
-  const c = platformConfig(env, platform);
+function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS }); }
+function has(env, key) { return Boolean(env[key]); }
+function statusFor(env, platform) {
+  const fields = platform === "kuaishou"
+    ? ["KUAISHOU_APP_KEY", "KUAISHOU_SIGN_SECRET", "KUAISHOU_ACCESS_TOKEN"]
+    : platform === "douyin"
+      ? ["DOUYIN_CLIENT_ID", "DOUYIN_CLIENT_SECRET", "DOUYIN_API_BASE_URL"]
+      : ["WECHAT_CLIENT_ID", "WECHAT_CLIENT_SECRET", "WECHAT_API_BASE_URL"];
   return {
     platform,
-    configured: isConfigured(c),
-    fields: {
-      clientId: Boolean(c.clientId),
-      clientSecret: Boolean(c.clientSecret),
-      authorizeUrl: Boolean(c.authorizeUrl),
-      tokenUrl: Boolean(c.tokenUrl),
-      apiBaseUrl: Boolean(c.apiBaseUrl),
-      redirectUri: Boolean(c.redirectUri),
-    },
-    connection: "not_connected",
-    note: "配置项状态不代表平台应用已审核或店铺已授权",
+    configured: fields.every(k => has(env, k)),
+    fields: Object.fromEntries(fields.map(k => [k, has(env, k)])),
+    adapter: platform === "kuaishou" ? "signed-merchant-api-read-detail" : "protocol-awaiting-official-app-docs",
+    connection: "not_verified",
+    note: "已填写凭证不代表店铺授权有效；需通过实际只读接口验证",
   };
 }
 function requireAdmin(request, env) {
   const expected = env.PRODUCT_MOVER_ADMIN_KEY;
-  if (!expected) return false;
-  return request.headers.get("authorization") === `Bearer ${expected}`;
+  return Boolean(expected && request.headers.get("authorization") === `Bearer ${expected}`);
 }
-function notReady(platform, feature) {
-  return json({
-    ok: false,
-    code: "PLATFORM_ADAPTER_PENDING",
-    platform,
-    feature,
-    message: "此平台的官方接口签名、权限和字段协议尚未完成核验；为避免调用错误接口，本功能暂未启用。",
-  }, 501);
+function pending(platform, feature) {
+  return json({ ok: false, code: "ADAPTER_NOT_READY", platform, feature,
+    message: "该平台此项接口尚未完成官方协议/权限核验，当前不会发起请求。" }, 501);
 }
-
 export async function onRequest({ request, env }) {
   const url = new URL(request.url);
-  const parts = url.pathname.replace(/^\/api\/product-mover\/?/, "").split("/").filter(Boolean);
+  const parts = url.pathname.replace(/^\\/api\\/product-mover\\/?/, "").split("/").filter(Boolean);
   const [resource, platform, action] = parts;
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: {
+    "access-control-allow-origin": env.ALLOWED_ORIGIN || url.origin,
+    "access-control-allow-methods": "GET,POST,OPTIONS",
+    "access-control-allow-headers": "content-type,authorization,x-product-mover-confirm",
+    "access-control-max-age": "86400",
+  }});
+  if (resource === "health" && request.method === "GET")
+    return json({ ok: true, service: "nalan-product-mover-api", version: 2, mode: "adapter-scaffold" });
+  if (resource === "platforms" && request.method === "GET")
+    return json({ ok: true, platforms: PLATFORMS.map(p => statusFor(env, p)) });
 
-  if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: {
-      "access-control-allow-origin": env.ALLOWED_ORIGIN || url.origin,
-      "access-control-allow-methods": "GET,POST,OPTIONS",
-      "access-control-allow-headers": "content-type,authorization",
-      "access-control-max-age": "86400",
-    }});
-  }
+  if (!requireAdmin(request, env))
+    return json({ ok: false, code: "UNAUTHORIZED", message: "需要服务端管理会话；禁止把管理密钥放入公开前端。" }, 401);
 
-  if (resource === "health" && request.method === "GET") {
-    return json({ ok: true, service: "nalan-product-mover-api", version: 1, mode: "scaffold" });
-  }
-  if (resource === "platforms" && request.method === "GET") {
-    return json({ ok: true, platforms: PLATFORMS.map(p => safePlatformStatus(env, p)) });
-  }
-
-  if (!requireAdmin(request, env)) {
-    return json({ ok: false, code: "UNAUTHORIZED", message: "需要在服务端配置 PRODUCT_MOVER_ADMIN_KEY，并由管理端安全调用。" }, 401);
-  }
-
-  if (resource !== "connections" || !PLATFORMS.includes(platform)) {
-    return json({ ok: false, code: "NOT_FOUND" }, 404);
-  }
-
-  const config = platformConfig(env, platform);
-  if (action === "authorize" && request.method === "POST") {
-    if (!isConfigured(config)) {
-      return json({
-        ok: false, code: "MISSING_PLATFORM_CONFIG",
-        missing: Object.entries(config).filter(([, value]) => !value).map(([key]) => key),
-        message: "请先在 Cloudflare Pages 对应环境中填写该平台配置；不要把密钥发到聊天或写入前端。",
-      }, 409);
+  if (resource === "products" && platform === "kuaishou" && request.method === "GET" && action) {
+    try {
+      const result = await kuaishouGetItem(env, action);
+      return json({ ok: true, platform, operation: "get_item", result });
+    } catch (error) {
+      const message = String(error?.message || "");
+      const status = message === "KUAISHOU_CONFIG_INCOMPLETE" ? 409 : 502;
+      return json({ ok: false, code: message || "KUAISHOU_REQUEST_FAILED",
+        message: status === 409 ? "请在 Cloudflare 服务端填写快手 appKey、signSecret 和授权 accessToken。" : "快手接口调用失败，请检查应用权限、授权状态和平台返回码；敏感信息已隐藏。" }, status);
     }
-    // OAuth parameters differ by platform. This endpoint deliberately does
-    // not invent scopes/state/signature rules. Implement after official docs
-    // and app permission review are available.
-    return json({
-      ok: false, code: "OAUTH_PROTOCOL_PENDING",
-      message: "配置项已齐备，但该平台 OAuth 参数、签名和授权范围需按已审核应用的官方文档实现后才能生成授权链接。",
-    }, 501);
   }
 
-  if (action === "callback" && request.method === "GET") {
-    // Do not accept a callback until state validation and provider-specific
-    // code exchange + encrypted server-side token persistence are implemented.
-    return json({
-      ok: false, code: "OAUTH_CALLBACK_PENDING",
-      message: "授权回调尚未启用：需先实现平台 state 校验、code 换 token 和加密持久化。",
-    }, 501);
+  if (resource === "products" && platform === "kuaishou" && action === "edit" && request.method === "POST") {
+    if (env.PRODUCT_MOVER_WRITE_ENABLED !== "true")
+      return json({ ok: false, code: "WRITE_DISABLED", message: "线上商品写操作默认关闭；需完成测试与单独启用。" }, 403);
+    if (request.headers.get("x-product-mover-confirm") !== "CONFIRM_SINGLE_ITEM_WRITE")
+      return json({ ok: false, code: "EXPLICIT_CONFIRM_REQUIRED", message: "缺少单商品写入确认标记。" }, 400);
+    try {
+      const payload = await request.json();
+      const result = await kuaishouEditItem(env, payload);
+      return json({ ok: true, platform, operation: "edit_item", result });
+    } catch (error) {
+      const message = String(error?.message || "");
+      return json({ ok: false, code: message || "KUAISHOU_EDIT_FAILED",
+        message: "快手编辑请求失败；请检查字段、商品状态和应用权限。敏感信息已隐藏。" }, message === "KUAISHOU_CONFIG_INCOMPLETE" ? 409 : 502);
+    }
   }
 
-  if (["products", "categories", "schema", "media", "publish", "inventory"].includes(action)) {
-    return notReady(platform, action);
-  }
+  if (resource === "connections" && PLATFORMS.includes(platform))
+    return pending(platform, action || "oauth");
+  if (resource === "products" && PLATFORMS.includes(platform))
+    return pending(platform, action || "products");
   return json({ ok: false, code: "NOT_FOUND" }, 404);
 }
