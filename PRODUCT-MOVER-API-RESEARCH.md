@@ -63,3 +63,24 @@
 
 ## 当前实现边界
 当前前端只负责本地文件读取、商品字段归一、批量调整和通用导出。它不调用平台接口、不上传图片、不保存店铺令牌、不修改任何线上商品。正式 API 适配器必须部署在独立服务端，并完成安全评审和店铺授权后才启用。
+
+
+## 2026-10-31 补充核验与实现进展
+
+### 快手电商开放平台（普通小店）
+已找到独立的快手电商开放平台文档入口与商品管理接口说明，不再把小程序商品挂载接口当作小店 API。官方平台列出商品信息/SKU、上下架、库存能力，并支持商家自用型应用。
+- 开放平台：https://open.kwaixiaodian.com/
+- API 调用说明：https://open.kwaixiaodian.com/docs/dev
+- 商品编辑接口（open.item.edit）：https://open.kwaixiaodian.com/zone/new/docs/api?name=open.item.edit&version=1
+- 已从官方调用说明核实：生产域名、POST form 参数、appkey/method/version/param/access_token/timestamp/signMethod/sign；签名按参数名排序，追加 signSecret，推荐 HMAC_SHA256。
+- 已核实商品详情方法名 `open.item.get`，商品编辑方法名 `open.item.edit`；编辑文档列出主图、SKU、详情图、类目属性等字段，以及 `merchant_item` 权限组。
+- 代码已实现快手签名请求 helper、商品详情只读路由和默认关闭的编辑路由。
+- 尚未完成：授权 code 换 token/刷新、商品列表分页、商品创建、图片上传、库存/SKU 专项接口的完整字段核验。
+
+### 抖店
+官方开放平台说明商品 API 支持商品同步、查询、修改、删除和库存管理，且商品搬家属于软件服务商产品方向。当前文档目录包含商品 API、库存 API、素材中心 API。仍需按商家自研/服务商应用角色，逐个核对具体商品 API 的请求字段、签名与权限，不能用抖音生活服务团购接口代替抖店普通商品接口。
+- 官方入口：https://op.jinritemai.com/docs
+
+### 微信小店
+当前仍需在视频号小店开发者文档/后台确认可用于本工具的商品 API、授权模式和应用权限；不使用旧版公众号微信小店接口作为替代。
+
