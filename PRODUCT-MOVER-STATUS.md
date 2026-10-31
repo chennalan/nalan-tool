@@ -43,3 +43,12 @@
 3. 设计独立服务端 API、OAuth 回调和加密 Token 存储；优先测试环境。
 4. 为每个平台实现独立 Adapter 和字段/类目/品牌/运费模板校验。
 5. 以用户确认的测试商品验证读取、素材上传、草稿创建、审核回调与库存更新；正式发布必须逐批人工确认。
+
+
+## API 服务端骨架（本次新增）
+- 新增 Cloudflare Pages Functions 路由：`functions/api/product-mover/[[path]].js`。
+- 已提供健康检查、平台配置状态、受保护的授权初始化入口、OAuth 回调占位，以及商品/类目/属性/素材/发布/库存 API 的明确待实现响应。
+- 新增 `PRODUCT-MOVER-ENV.example.md`：列出三平台后续需在 Cloudflare 服务端填写的环境变量名称，不含真实密钥。
+- 新增 `PRODUCT-MOVER-API-IMPLEMENTATION.md`：记录接口边界、待完成协议和安全要求。
+- 当前状态：服务端路由骨架已写入开发分支；三平台真实 OAuth、签名、Token 加密存储及商品 API 尚未接通。不能把环境变量填写完成等同于店铺已授权。
+- 未创建/绑定 D1 或 R2；未写生产数据；未合并 main。
