@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nalan 商品搬家助手</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{color-scheme:light}body{font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif;background:#f5f7fb;color:#172033}
+.panel{background:white;border:1px solid #e5eaf2;border-radius:18px;box-shadow:0 8px 28px #15213b08}
+.field{width:100%;border:1px solid #dbe2ec;border-radius:10px;padding:10px 12px;background:#fff;color:#172033}
+.field:focus{outline:2px solid #bfdbfe;border-color:#3b82f6}.btn{border-radius:10px;padding:10px 15px;font-weight:600}.primary{background:#2563eb;color:white}.soft{background:#eef2f8;color:#334155}
+.pill{font-size:12px;border-radius:99px;padding:4px 9px;background:#eff6ff;color:#1d4ed8}.table-wrap{overflow:auto}th,td{padding:10px 12px;border-bottom:1px solid #edf0f5;text-align:left;white-space:nowrap;font-size:13px}
+th{color:#64748b;background:#f8fafc;position:sticky;top:0}td input{min-width:90px;border:1px solid #e2e8f0;border-radius:7px;padding:6px 8px;width:100%}
+.step{display:flex;align-items:center;gap:9px;color:#64748b;font-size:13px}.step b{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#e2e8f0;color:#334155}.step.active{color:#1d4ed8}.step.active b{background:#dbeafe;color:#1d4ed8}
+</style>
+</head>
+<body>
+<header class="bg-white border-b border-slate-200">
+ <div class="max-w-7xl mx-auto px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+  <div><a href="index.html" class="text-sm text-slate-500">← 返回 Nalan 工具箱</a><h1 class="text-2xl font-bold mt-1">Nalan 商品搬家助手</h1><p class="text-sm text-slate-500 mt-1">跨平台商品资料整理、字段转换与批量导出</p></div>
+  <span class="pill">独立开发预览 · 本地处理</span>
+ </div>
+</header>
+<main class="max-w-7xl mx-auto p-5 space-y-5">
+ <section class="panel p-5">
+  <div class="flex flex-wrap items-center gap-5">
+   <div class="step active"><b>1</b>导入商品</div><div class="step"><b>2</b>字段整理</div><div class="step"><b>3</b>批量调整</div><div class="step"><b>4</b>导出目标模板</div>
+  </div>
+  <div class="grid md:grid-cols-3 gap-4 mt-5">
+   <label class="block"><span class="text-sm font-semibold">商品来源平台</span><select id="source" class="field mt-2"><option value="douyin">抖音小店</option><option value="kuaishou">快手小店</option><option value="wechat">微信小店</option><option value="generic">通用 Excel / CSV</option></select></label>
+   <label class="block"><span class="text-sm font-semibold">搬家目标平台</span><select id="target" class="field mt-2"><option value="kuaishou">快手小店</option><option value="wechat">微信小店</option><option value="douyin">抖音小店</option><option value="generic">通用 Excel / CSV</option></select></label>
+   <div class="flex items-end"><label class="block w-full"><span class="text-sm font-semibold">导入商品文件</span><input id="file" type="file" accept=".xlsx,.xls,.csv,.json" class="field mt-2 text-sm"></label></div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2"><button id="demo" class="btn soft">载入示例商品</button><button id="template" class="btn soft">下载通用 Excel 模板</button><button id="clear" class="btn soft">清空数据</button><span id="fileStatus" class="text-sm text-slate-500 self-center">支持 Excel、CSV、JSON；文件在当前浏览器本地读取</span></div>
+ </section>
+ <section class="panel p-5 space-y-4">
+  <div class="flex flex-wrap justify-between items-center gap-2"><div><h2 class="text-lg font-bold">商品字段映射</h2><p class="text-sm text-slate-500">先将不同平台的字段归一，再导出目标平台模板</p></div><span id="count" class="pill">0 件商品</span></div>
+  <div class="grid md:grid-cols-4 gap-3">
+   <label class="text-sm">商品标题<input id="mapTitle" class="field mt-1" value="商品标题"></label>
+   <label class="text-sm">商品编码<input id="mapSku" class="field mt-1" value="商品编码"></label>
+   <label class="text-sm">售价<input id="mapPrice" class="field mt-1" value="售价"></label>
+   <label class="text-sm">库存<input id="mapStock" class="field mt-1" value="库存"></label>
+   <label class="text-sm">主图 URL<input id="mapImage" class="field mt-1" value="主图URL"></label>
+   <label class="text-sm">详情描述<input id="mapDetail" class="field mt-1" value="商品详情"></label>
+   <label class="text-sm">颜色规格<input id="mapColor" class="field mt-1" value="颜色"></label>
+   <label class="text-sm">尺码规格<input id="mapSize" class="field mt-1" value="尺码"></label>
+  </div>
+  <div class="flex flex-wrap gap-2"><button id="applyMap" class="btn primary">应用字段映射</button><span class="text-xs text-slate-500 self-center">可将来源表格中的列名映射到统一商品字段</span></div>
+ </section>
+ <section class="panel p-5 space-y-4">
+  <div><h2 class="text-lg font-bold">批量修改</h2><p class="text-sm text-slate-500">调整会作用于当前导入商品，导出前仍可逐行检查</p></div>
+  <div class="grid md:grid-cols-4 gap-3">
+   <label class="text-sm">价格调整<select id="priceMode" class="field mt-1"><option value="none">不调整</option><option value="percent">按百分比上调/下调</option><option value="amount">统一增加/减少金额</option><option value="set">统一设置售价</option></select></label>
+   <label class="text-sm">调整数值<input id="priceValue" type="number" step="0.01" class="field mt-1" placeholder="例如 10 或 -5"></label>
+   <label class="text-sm">标题前缀<input id="prefix" class="field mt-1" placeholder="例如 AVENELLE"></label>
+   <label class="text-sm">标题后缀<input id="suffix" class="field mt-1" placeholder="例如 新款上新"></label>
+   <label class="text-sm">标题查找<input id="findText" class="field mt-1" placeholder="需要替换的文字"></label>
+   <label class="text-sm">替换为<input id="replaceText" class="field mt-1" placeholder="替换后的文字"></label>
+   <label class="text-sm">库存处理<select id="stockMode" class="field mt-1"><option value="keep">保持原库存</option><option value="add">增加/减少库存</option><option value="set">统一设置库存</option></select></label>
+   <label class="text-sm">库存数值<input id="stockValue" type="number" step="1" class="field mt-1" placeholder="例如 20 或 -3"></label>
+  </div>
+  <div class="flex flex-wrap gap-2"><button id="applyBatch" class="btn primary">应用批量修改</button><button id="resetBatch" class="btn soft">撤销批量修改</button><span id="batchStatus" class="text-sm text-slate-500 self-center"></span></div>
+ </section>
+ <section class="panel p-5 space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-bold">商品预览</h2><p class="text-sm text-slate-500">可直接修改标题、价格、库存、图片链接和详情</p></div><div class="flex gap-2"><button id="exportCsv" class="btn soft">导出 CSV</button><button id="exportXlsx" class="btn primary">导出 Excel</button></div></div>
+  <div class="table-wrap rounded-xl border border-slate-200"><table class="w-full"><thead><tr><th>标题</th><th>编码 / SKU</th><th>售价</th><th>库存</th><th>颜色</th><th>尺码</th><th>主图 URL</th><th>商品详情</th></tr></thead><tbody id="rows"><tr><td colspan="8" class="text-center text-slate-400 py-10">请导入商品文件或载入示例商品</td></tr></tbody></table></div>
+  <div class="flex flex-wrap justify-between gap-2 text-xs text-slate-500"><span>提示：商品图片目前按 URL 字段迁移；后续接入平台授权后再执行图片上传与平台发布。</span><span id="summary">尚未导入数据</span></div>
+ </section>
+ <section class="panel p-5">
+  <h2 class="font-bold">平台 API 接入状态</h2><p class="text-sm text-slate-500 mt-1">当前为本地资料处理原型，未连接任何店铺，也不会发布或修改线上商品。</p>
+  <div class="grid md:grid-cols-3 gap-3 mt-4">
+   <div class="rounded-xl bg-slate-50 p-4"><b>抖音小店</b><p class="text-xs text-amber-700 mt-2">待申请/配置官方开放平台应用与商品权限</p></div>
+   <div class="rounded-xl bg-slate-50 p-4"><b>快手小店</b><p class="text-xs text-amber-700 mt-2">待申请/配置官方开放平台应用与商品权限</p></div>
+   <div class="rounded-xl bg-slate-50 p-4"><b>微信小店</b><p class="text-xs text-amber-700 mt-2">待核实当前开放接口、商家授权和发布权限</p></div>
+  </div>
+  <p class="text-xs text-slate-500 mt-4">正式 API 模式需要服务端安全保存授权凭证，并按各平台审核、类目、品牌、运费模板及商品发布规则分别适配。不会通过模拟登录、抓取后台页面或绕过平台限制来搬家。</p>
+ </section>
+</main>
+<script>
+(function(){
+'use strict';
+let products=[],original=[];
+const $=id=>document.getElementById(id);
+const fields=['title','sku','price','stock','color','size','image','detail'];
+const labels={title:'商品标题',sku:'商品编码',price:'售价',stock:'库存',color:'颜色',size:'尺码',image:'主图URL',detail:'商品详情'};
+const mapIds={title:'mapTitle',sku:'mapSku',price:'mapPrice',stock:'mapStock',image:'mapImage',detail:'mapDetail',color:'mapColor',size:'mapSize'};
+function normalize(row){
+ const get=(id,alts=[])=>{const key=$(mapIds[id]).value.trim();for(const k of [key,...alts])if(row[k]!==undefined&&row[k]!==null)return row[k];return ''};
+ return {title:String(get('title',['title','标题','商品名称','商品标题'])),sku:String(get('sku',['sku','编码','商品编码','货号'])),price:Number(get('price',['price','价格','售价','销售价'])||0),stock:Number(get('stock',['stock','库存','可售库存'])||0),color:String(get('color',['color','颜色','颜色分类'])),size:String(get('size',['size','尺码','尺寸'])),image:String(get('image',['image','图片','主图','主图URL','图片URL'])),detail:String(get('detail',['detail','详情','商品详情','描述']))};
+}
+function render(){
+ $('count').textContent=products.length+' 件商品';
+ $('summary').textContent=products.length?'共 '+products.length+' 件商品，目标平台：'+$('target').selectedOptions[0].text:'尚未导入数据';
+ if(!products.length){$('rows').innerHTML='<tr><td colspan="8" class="text-center text-slate-400 py-10">请导入商品文件或载入示例商品</td></tr>';return}
+ $('rows').innerHTML=products.map((p,i)=>'<tr>'+fields.map(f=>'<td><input data-i="'+i+'" data-f="'+f+'" value="'+esc(p[f]??'')+'" aria-label="'+labels[f]+'"></td>').join('')+'</tr>').join('');
+ $('rows').querySelectorAll('input').forEach(el=>el.addEventListener('change',()=>{const i=+el.dataset.i,f=el.dataset.f;products[i][f]=['price','stock'].includes(f)?Number(el.value):el.value}));
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function saveOriginal(){original=products.map(p=>({...p}))}
+function downloadBook(name,rows){const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'商品资料');XLSX.writeFile(wb,name)}
+$('file').addEventListener('change',async e=>{
+ const f=e.target.files[0];if(!f)return;
+ try{const data=await f.arrayBuffer();let wb;
+ if(f.name.toLowerCase().endsWith('.json')){const parsed=JSON.parse(new TextDecoder().decode(data));const arr=Array.isArray(parsed)?parsed:(parsed.products||parsed.data||[]);products=arr.map(normalize)}
+ else{wb=XLSX.read(data,{type:'array'});const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});products=raw.map(normalize)}
+ saveOriginal();render();$('fileStatus').textContent='已读取 '+f.name+'，共 '+products.length+' 件商品';}
+ catch(err){$('fileStatus').textContent='读取失败：'+err.message}
+});
+$('demo').onclick=()=>{products=[{title:'AVENELLE 法式蕾丝睡衣套装',sku:'AV-001',price:159,stock:100,color:'黑色',size:'M',image:'https://example.com/main.jpg',detail:'轻柔面料，蕾丝拼接'}, {title:'AVENELLE 纯棉家居服',sku:'AV-002',price:129,stock:80,color:'米白',size:'L',image:'https://example.com/detail.jpg',detail:'纯棉舒适家居服'}];saveOriginal();render();$('fileStatus').textContent='已载入示例数据（示例图片地址不可直接发布）'};
+$('template').onclick=()=>downloadBook('Nalan-商品搬家通用模板.xlsx',[{商品标题:'示例商品',商品编码:'DEMO-001',售价:99,库存:100,颜色:'黑色',尺码:'M',主图URL:'https://example.com/image.jpg',商品详情:'商品描述'}]);
+$('clear').onclick=()=>{products=[];original=[];$('file').value='';render();$('fileStatus').textContent='已清空当前页面数据'};
+$('applyMap').onclick=()=>{const f=$('file').files[0];if(!f){$('fileStatus').textContent='请先选择文件';return} $('fileStatus').textContent='字段映射将在重新导入文件时应用，请重新选择文件'};
+$('applyBatch').onclick=()=>{
+ if(!products.length)return;
+ const mode=$('priceMode').value,n=Number($('priceValue').value||0),sm=$('stockMode').value,sn=Number($('stockValue').value||0);
+ products=products.map(p=>{let title=String(p.title||'');if($('prefix').value)title=$('prefix').value+title;if($('suffix').value)title+= $('suffix').value;if($('findText').value)title=title.split($('findText').value).join($('replaceText').value);
+ let price=Number(p.price)||0;if(mode==='percent')price=price*(1+n/100);if(mode==='amount')price+=n;if(mode==='set')price=n;
+ let stock=Number(p.stock)||0;if(sm==='add')stock+=sn;if(sm==='set')stock=sn;
+ return {...p,title,price:Math.max(0,Math.round(price*100)/100),stock:Math.max(0,Math.round(stock))}});
+ render();$('batchStatus').textContent='已应用到 '+products.length+' 件商品';
+};
+$('resetBatch').onclick=()=>{products=original.map(p=>({...p}));render();$('batchStatus').textContent='已恢复导入时的数据'};
+function exportRows(){return products.map(p=>({'商品标题':p.title,'商品编码':p.sku,'售价':p.price,'库存':p.stock,'颜色':p.color,'尺码':p.size,'主图URL':p.image,'商品详情':p.detail}))}
+$('exportXlsx').onclick=()=>{if(products.length)downloadBook('Nalan-商品搬家-'+$('target').value+'.xlsx',exportRows())};
+$('exportCsv').onclick=()=>{if(!products.length)return;const ws=XLSX.utils.json_to_sheet(exportRows());const csv='\ufeff'+XLSX.utils.sheet_to_csv(ws);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='Nalan-商品搬家.csv';a.click();URL.revokeObjectURL(a.href)};
+})();
+</script>
+</body></html>
