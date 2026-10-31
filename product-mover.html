@@ -80,7 +80,7 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0}td input{min-width:90p
 <script>
 (function(){
 'use strict';
-let products=[],original=[];
+let products=[],original=[],rawRows=[];
 const $=id=>document.getElementById(id);
 const fields=['title','sku','price','stock','color','size','image','detail'];
 const labels={title:'商品标题',sku:'商品编码',price:'售价',stock:'库存',color:'颜色',size:'尺码',image:'主图URL',detail:'商品详情'};
@@ -102,15 +102,15 @@ function downloadBook(name,rows){const ws=XLSX.utils.json_to_sheet(rows);const w
 $('file').addEventListener('change',async e=>{
  const f=e.target.files[0];if(!f)return;
  try{const data=await f.arrayBuffer();let wb;
- if(f.name.toLowerCase().endsWith('.json')){const parsed=JSON.parse(new TextDecoder().decode(data));const arr=Array.isArray(parsed)?parsed:(parsed.products||parsed.data||[]);products=arr.map(normalize)}
- else{wb=XLSX.read(data,{type:'array'});const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});products=raw.map(normalize)}
+ if(f.name.toLowerCase().endsWith('.json')){const parsed=JSON.parse(new TextDecoder().decode(data));const arr=Array.isArray(parsed)?parsed:(parsed.products||parsed.data||[]);rawRows=arr;products=rawRows.map(normalize)}
+ else{wb=XLSX.read(data,{type:'array'});rawRows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});products=rawRows.map(normalize)}
  saveOriginal();render();$('fileStatus').textContent='已读取 '+f.name+'，共 '+products.length+' 件商品';}
  catch(err){$('fileStatus').textContent='读取失败：'+err.message}
 });
 $('demo').onclick=()=>{products=[{title:'AVENELLE 法式蕾丝睡衣套装',sku:'AV-001',price:159,stock:100,color:'黑色',size:'M',image:'https://example.com/main.jpg',detail:'轻柔面料，蕾丝拼接'}, {title:'AVENELLE 纯棉家居服',sku:'AV-002',price:129,stock:80,color:'米白',size:'L',image:'https://example.com/detail.jpg',detail:'纯棉舒适家居服'}];saveOriginal();render();$('fileStatus').textContent='已载入示例数据（示例图片地址不可直接发布）'};
 $('template').onclick=()=>downloadBook('Nalan-商品搬家通用模板.xlsx',[{商品标题:'示例商品',商品编码:'DEMO-001',售价:99,库存:100,颜色:'黑色',尺码:'M',主图URL:'https://example.com/image.jpg',商品详情:'商品描述'}]);
-$('clear').onclick=()=>{products=[];original=[];$('file').value='';render();$('fileStatus').textContent='已清空当前页面数据'};
-$('applyMap').onclick=()=>{const f=$('file').files[0];if(!f){$('fileStatus').textContent='请先选择文件';return} $('fileStatus').textContent='字段映射将在重新导入文件时应用，请重新选择文件'};
+$('clear').onclick=()=>{products=[];original=[];rawRows=[];$('file').value='';render();$('fileStatus').textContent='已清空当前页面数据'};
+$('applyMap').onclick=()=>{if(!rawRows.length){$('fileStatus').textContent='请先导入商品文件或载入示例商品';return}products=rawRows.map(normalize);saveOriginal();render();$('fileStatus').textContent='字段映射已重新应用到 '+products.length+' 件商品'};
 $('applyBatch').onclick=()=>{
  if(!products.length)return;
  const mode=$('priceMode').value,n=Number($('priceValue').value||0),sm=$('stockMode').value,sn=Number($('stockValue').value||0);
