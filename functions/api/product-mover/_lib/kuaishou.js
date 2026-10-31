@@ -10,7 +10,7 @@ async function hmacBase64(secret, message) {
 }
 function sortedPairs(params) {
   return Object.entries(params).filter(([,v]) => v !== undefined && v !== null)
-    .sort(([a],[b]) => a.localeCompare(b))
+    .sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0)
     .map(([k,v]) => `${k}=${v}`).join("&");
 }
 
