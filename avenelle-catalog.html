@@ -100,32 +100,7 @@ function generate(){
   return '<article class="page"><header class="catalog-head"><div class="brand">AVENELLE</div><div class="kicker">THE EVERYDAY COLLECTION</div></header><div class="hero-wrap">'+image+'</div><h1>'+esc(p.name)+'</h1><div class="info"><div><span>SIZE / 尺码</span><b>'+esc(p.sizes||'—')+'</b></div><div><span>PRICE / 售价</span><b>'+esc(money(p.price)||'—')+'</b></div>'+(showCost?'<div><span>COST / 进价</span><b>'+esc(money(p.cost)||'—')+'</b></div>':'')+'</div>'+detailStrip+'<div class="foot">AVENELLE · THE ART OF EVERYDAY ELEGANCE</div></article>';
  }).join('');
  const win=window.open('','_blank');if(!win){alert('浏览器阻止了弹出窗口，请允许此网站打开新窗口后重试。');return}
- win.document.open();win.document.write('<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>AVENELLE 商品画册</title><style>
-@page{size:A4;margin:0}
-*{box-sizing:border-box}
-body{margin:0;font-family:"Microsoft YaHei",Arial,sans-serif;color:#292724}
-.page{height:297mm;padding:11mm 15mm 13mm;position:relative;page-break-after:always;break-after:page;text-align:center;overflow:hidden;background:#fff}
-.page:last-child{page-break-after:auto;break-after:auto}
-.catalog-head{height:17mm;border-bottom:1px solid #eeeae2;display:flex;align-items:flex-start;justify-content:space-between}
-.brand{font:24px Georgia,serif;letter-spacing:7px;color:#292724}
-.kicker{font:7px Arial,sans-serif;letter-spacing:2.5px;color:#a88f60;padding-top:3mm}
-.hero-wrap{height:128mm;margin:5mm 0 3mm;background:#faf9f6;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.hero,.empty{display:block;width:100%;height:100%;object-fit:contain}
-.empty{display:grid;place-items:center;color:#999;font-size:11px}
-h1{font:22px Georgia,"Microsoft YaHei",serif;font-weight:400;letter-spacing:1px;margin:2mm 0 4mm}
-.info{display:flex;justify-content:center;gap:25mm;margin:0 auto}
-.info div{display:flex;flex-direction:column;gap:2mm;min-width:24mm}
-.info span{font:7px Arial,sans-serif;letter-spacing:2px;color:#a88f60}
-.info b{font-size:11px;font-weight:400;color:#393630}
-.detail-area{position:absolute;left:15mm;right:15mm;bottom:19mm;border-top:1px solid #e9e4da;padding-top:3mm}
-.detail-heading{display:flex;align-items:center;justify-content:center;gap:3mm;font:7px Arial,sans-serif;letter-spacing:1.8px;color:#a88f60;margin-bottom:3mm}
-.detail-heading i{width:9mm;border-top:1px solid #c9b995}
-.detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:22mm;gap:2.5mm;align-items:center}
-.detail-item{height:22mm;background:#f8f7f4;padding:1mm;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.detail-item img{width:100%;height:100%;object-fit:contain}
-.foot{position:absolute;bottom:7mm;left:0;right:0;font:6.5px Arial,sans-serif;letter-spacing:2px;color:#aaa}
-@media screen{body{background:#e9e7e2;padding:12px 0}.page{width:210mm;margin:0 auto 14px;box-shadow:0 2px 20px #0001}}
-</style></head><body>'+pages+'<script>addEventListener("load",()=>{Promise.all([...document.images].map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r}))).then(()=>setTimeout(()=>print(),500))});<\\/script></body></html>');win.document.close();
+ win.document.open();win.document.write('<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>AVENELLE 商品画册</title><style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;font-family:"Microsoft YaHei",Arial,sans-serif;color:#292724}.page{height:297mm;padding:11mm 15mm 13mm;position:relative;page-break-after:always;break-after:page;text-align:center;overflow:hidden;background:#fff}.page:last-child{page-break-after:auto;break-after:auto}.catalog-head{height:17mm;border-bottom:1px solid #eeeae2;display:flex;align-items:flex-start;justify-content:space-between}.brand{font:24px Georgia,serif;letter-spacing:7px;color:#292724}.kicker{font:7px Arial,sans-serif;letter-spacing:2.5px;color:#a88f60;padding-top:3mm}.hero-wrap{height:128mm;margin:5mm 0 3mm;background:#faf9f6;display:flex;align-items:center;justify-content:center;overflow:hidden}.hero,.empty{display:block;width:100%;height:100%;object-fit:contain}.empty{display:grid;place-items:center;color:#999;font-size:11px}h1{font:22px Georgia,"Microsoft YaHei",serif;font-weight:400;letter-spacing:1px;margin:2mm 0 4mm}.info{display:flex;justify-content:center;gap:25mm;margin:0 auto}.info div{display:flex;flex-direction:column;gap:2mm;min-width:24mm}.info span{font:7px Arial,sans-serif;letter-spacing:2px;color:#a88f60}.info b{font-size:11px;font-weight:400;color:#393630}.detail-area{position:absolute;left:15mm;right:15mm;bottom:19mm;border-top:1px solid #e9e4da;padding-top:3mm}.detail-heading{display:flex;align-items:center;justify-content:center;gap:3mm;font:7px Arial,sans-serif;letter-spacing:1.8px;color:#a88f60;margin-bottom:3mm}.detail-heading i{width:9mm;border-top:1px solid #c9b995}.detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:22mm;gap:2.5mm;align-items:center}.detail-item{height:22mm;background:#f8f7f4;padding:1mm;display:flex;align-items:center;justify-content:center;overflow:hidden}.detail-item img{width:100%;height:100%;object-fit:contain}.foot{position:absolute;bottom:7mm;left:0;right:0;font:6.5px Arial,sans-serif;letter-spacing:2px;color:#aaa}@media screen{body{background:#e9e7e2;padding:12px 0}.page{width:210mm;margin:0 auto 14px;box-shadow:0 2px 20px #0001}}</style></head><body>'+pages+'<script>addEventListener("load",()=>{Promise.all([...document.images].map(i=>i.complete?Promise.resolve():new Promise(r=>{i.onload=r;i.onerror=r}))).then(()=>setTimeout(()=>print(),500))});<\\/script></body></html>');win.document.close();
 }
 $('excelFile').addEventListener('change',e=>{if(e.target.files[0])loadExcel(e.target.files[0])});
 $('downloadTemplate').addEventListener('click',()=>{const ws=XLSX.utils.aoa_to_sheet([['商品名称','进价','售价','尺码','主图'],['示例商品','50','129','M/L/XL','示例商品主图.jpg']]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'商品资料');XLSX.writeFile(wb,'AVENELLE_五字段商品资料模板.xlsx')});
