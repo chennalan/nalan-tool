@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1120">
+<title>Nalan AI 服装拆解工作台</title>
+<link rel="stylesheet" href="css/dark-mode.css">
+<script src="js/dark-mode.js" defer></script>
+<style>
+:root{--bg:#f5f6f8;--panel:#fff;--ink:#202532;--muted:#727b8b;--line:#e2e5eb;--accent:#8baec2;--accent2:#526f83}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+header{height:64px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10}a{color:inherit;text-decoration:none}.brand{font-weight:750;letter-spacing:.02em}.brand small{display:block;color:var(--muted);font-weight:400;font-size:10px;letter-spacing:.14em}.top-actions{display:flex;gap:8px;align-items:center}.wrap{max-width:1500px;margin:auto;padding:22px;display:grid;grid-template-columns:350px minmax(0,1fr);gap:18px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px;min-width:0}.panel h2{font-size:15px;margin:0 0 12px}.muted{color:var(--muted);font-size:12px}.drop{display:block;border:1.5px dashed #aab7c4;border-radius:12px;padding:20px 12px;text-align:center;cursor:pointer;background:rgba(148,163,184,.06)}.drop:hover{border-color:var(--accent2)}input,select,button{font:inherit}input[type=text],input[type=password],input[type=url],select{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:var(--panel);color:var(--ink)}label{display:block;font-size:12px;font-weight:650;margin:12px 0 5px}.row{display:flex;gap:8px;align-items:center}.row>*{min-width:0}.row .grow{flex:1}.btn{border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:var(--panel);color:var(--ink);cursor:pointer}.btn.primary{background:#263b4a;color:#fff;border-color:#263b4a}.btn.soft{background:#edf2f5;border-color:#edf2f5;color:#334b5c}.btn:disabled{opacity:.45;cursor:not-allowed}.tabs{display:flex;gap:6px;margin:0 0 13px}.tabs button{flex:1}.tabs button.active{background:#263b4a;color:white;border-color:#263b4a}.hidden{display:none!important}.stage-wrap{background:#e9edf0;border:1px solid var(--line);border-radius:13px;min-height:310px;display:flex;align-items:center;justify-content:center;padding:12px;position:relative;overflow:hidden}.stage{position:relative;display:inline-block;max-width:100%;max-height:65vh;line-height:0}.stage img{display:block;max-width:100%;max-height:65vh;object-fit:contain;user-select:none;pointer-events:none}.selection{position:absolute;inset:0;cursor:crosshair;touch-action:none}.selection-box{position:absolute;border:2px solid #fff;outline:1px solid #496b82;background:#8baec233;display:none;pointer-events:none}.mode-note{padding:9px 11px;background:#edf3f6;border-radius:9px;color:#526879;font-size:12px;margin-top:10px}.thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.thumb{border:1px solid var(--line);border-radius:9px;padding:6px;background:var(--panel);min-width:0}.thumb img{width:100%;aspect-ratio:1.1;object-fit:cover;border-radius:5px;display:block}.thumb .cap{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}.thumb button{width:100%;font-size:11px;padding:4px;margin-top:4px}.editor{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);gap:16px}.editor h2{display:flex;justify-content:space-between;align-items:center}.canvas-wrap{background:#e9edf0;border-radius:12px;padding:12px;display:flex;justify-content:center;align-items:flex-start;min-height:560px;overflow:auto}.canvas-wrap canvas{width:min(100%,620px);height:auto;box-shadow:0 8px 30px #18212c22;background:#fff}.controls{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.check{display:flex;gap:7px;align-items:center;font-size:12px;margin-top:12px}.check input{width:auto}.status{font-size:12px;color:var(--muted);min-height:20px;margin-top:9px}.privacy{border-radius:9px;padding:10px;background:#eef6f1;color:#3d6750;font-size:11px;margin-top:12px}.divider{border:0;border-top:1px solid var(--line);margin:16px 0}.api-box{background:rgba(148,163,184,.07);padding:12px;border-radius:10px}.api-box label{margin-top:8px}.foot{max-width:1500px;margin:auto;padding:0 22px 24px;color:var(--muted);font-size:11px}
+@media(max-width:1050px){.wrap{grid-template-columns:1fr}.editor{grid-template-columns:1fr}.canvas-wrap{min-height:360px}}
+@media(max-width:560px){header{padding:0 13px}.wrap{padding:11px}.panel{padding:13px}.controls{grid-template-columns:1fr}.thumbs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+html[data-theme="dark"] body{--bg:#0b1120;--panel:#111827;--ink:#e5e7eb;--muted:#9ca3af;--line:#374151}
+html[data-theme="dark"] .stage-wrap,html[data-theme="dark"] .canvas-wrap{background:#202b3a}
+html[data-theme="dark"] .mode-note{background:#1e293b;color:#b8c8d4}
+</style>
+</head>
+<body data-tool="fashion-breakdown">
+<header><a class="brand" href="index.html">← 纳兰工具箱<small>NALAN CREATIVE TOOLS</small></a><strong>Nalan AI 服装拆解工作台</strong><span class="muted">本地编辑 · AI 辅助</span></header>
+<main class="wrap">
+<aside class="panel">
+  <h2>01 / 图片素材</h2>
+  <label class="drop" for="files"><div style="font-size:25px">＋</div><strong>上传模特图 / 商品图 / 细节图</strong><div class="muted">支持 JPG、PNG、WebP；可多选</div></label>
+  <input id="files" type="file" accept="image/*" multiple class="hidden">
+  <div class="row" style="margin-top:9px"><button class="btn" id="add">继续添加</button><button class="btn" id="clear">清空素材</button></div>
+  <div class="status" id="fileStatus">尚未添加图片</div>
+  <div class="thumbs" id="sourceThumbs"></div>
+  <hr class="divider">
+  <h2>02 / 拆解模式</h2>
+  <div class="tabs"><button class="btn active" data-mode="auto">AI 自动拆解</button><button class="btn" data-mode="manual">手动选区</button></div>
+  <div id="autoPanel">
+    <p class="muted">AI 识别服装主体与可见细节，返回局部区域建议。识别结果可手动调整，不会自动虚构不可见结构。</p>
+    <button class="btn primary" id="analyze" style="width:100%" disabled>✦ AI 分析当前图片</button>
+    <div class="status" id="aiStatus">配置 Gemini 接口后可使用自动识别。</div>
+  </div>
+  <div id="manualPanel" class="hidden">
+    <p class="muted">在右侧图片上按住鼠标拖动，框选面料、领口、袖口、蕾丝、纽扣等局部。</p>
+    <button class="btn primary" id="crop" style="width:100%" disabled>添加当前选区为细节图</button>
+    <div class="mode-note">手动模式完全在浏览器本地运行，不需要 API。</div>
+  </div>
+  <div class="row" style="margin-top:9px"><button class="btn" id="addAll" disabled>添加建议细节</button><button class="btn" id="clearDetails">清空细节</button></div>
+  <div class="status" id="detailStatus">尚未提取细节</div>
+  <div id="detailThumbs" class="thumbs"></div>
+  <hr class="divider">
+  <h2>03 / Gemini 接口设置</h2>
+  <div class="api-box">
+    <label for="apiBase">API Base URL</label><input id="apiBase" type="url" placeholder="https://generativelanguage.googleapis.com/v1beta">
+    <label for="apiModel">视觉分析模型</label><input id="apiModel" type="text" value="gemini-2.5-flash">
+    <label for="apiKey">API Key</label><input id="apiKey" type="password" autocomplete="off" placeholder="仅本次页面会话使用">
+    <p class="muted">默认按 Gemini generateContent 格式调用。若中转站使用不同协议，后续可按其接口规范适配。密钥不写入仓库、不主动保存。</p>
+    <div class="check"><input id="rememberEndpoint" type="checkbox"><span>仅记住 Base URL 和模型（不保存 Key）</span></div>
+  </div>
+  <div class="privacy">🔒 图片裁切、排版和导出均在本地完成。点击 AI 分析时，当前图片会发送到你配置的 Gemini 中转 API；请勿上传不适合外传的图片。</div>
+</aside>
+<section class="panel">
+  <div class="editor">
+    <div>
+      <h2>图片选区 <span class="muted" id="activeMeta">等待图片</span></h2>
+      <div class="stage-wrap"><div class="stage" id="stage"><img id="activeImage" alt="当前商品图片"><div class="selection" id="selection"><div class="selection-box" id="selectionBox"></div></div></div><div class="muted" id="emptyStage">上传图片后开始拆解</div></div>
+      <div class="status">提示：主图尽量选择清晰、完整展示服装的照片；细节图建议使用高分辨率原图。</div>
+    </div>
+    <div>
+      <h2>海报预览 <span class="muted">EDITORIAL COLLAGE</span></h2>
+      <div class="canvas-wrap"><canvas id="poster" width="1200" height="1500"></canvas></div>
+      <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn primary" id="export">导出高清海报 PNG</button><button class="btn" id="refresh">刷新排版</button></div>
+      <div class="status" id="exportStatus">默认 4:5 竖版 · 2400 × 3000 高清输出</div>
+    </div>
+  </div>
+  <hr class="divider">
+  <h2>04 / 杂志式排版设置</h2>
+  <div class="controls">
+    <div><label for="brandName">品牌 / 标题</label><input id="brandName" type="text" value="AVENELLE"></div>
+    <div><label for="subTitle">副标题</label><input id="subTitle" type="text" value="GARMENT DETAILS / COLLECTION"></div>
+    <div><label for="layout">拼贴布局</label><select id="layout"><option value="editorial">错位杂志拼贴</option><option value="balanced">均衡细节排布</option><option value="minimal">极简主视觉</option></select></div>
+    <div><label for="paper">背景颜色</label><select id="paper"><option value="#f7f7f5">柔白</option><option value="#edf2f5">雾蓝灰</option><option value="#f1ece6">奶油米</option><option value="#ffffff">纯白</option><option value="#202a33">深墨色</option></select></div>
+  </div>
+  <div class="check"><input id="showLabels" type="checkbox" checked><span>显示细节编号与英文说明</span></div>
+</section>
+</main>
+<footer class="foot">Nalan AI Fashion Breakdown Studio · 商品图的真实细节优先。AI 分析只提供可见区域建议，生成海报前请核对颜色、面料与工艺。</footer>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const state={files:[],active:0,details:[],selection:null,mode:'auto',images:[],posterReady:false};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function loadImage(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=()=>resolve({file,url,img});img.onerror=reject;img.src=url})}
+function current(){return state.images[state.active]}
+function renderSources(){ $('sourceThumbs').innerHTML=state.images.map((x,i)=>'<div class="thumb" data-index="'+i+'"><img src="'+x.url+'" alt=""><div class="cap">'+esc(x.file.name)+'</div><button class="btn" data-open="'+i+'">'+(i===state.active?'当前主图':'设为主图')+'</button></div>').join('');$('fileStatus').textContent=state.images.length+' 张图片 · 当前主图 '+(state.active+1);$('analyze').disabled=!current();$('crop').disabled=!current()}
+function setActive(i){state.active=i;state.selection=null;renderSources();showActive();drawPoster()}
+function showActive(){const x=current();$('activeImage').src=x?x.url:'';$('activeImage').style.display=x?'block':'none';$('emptyStage').style.display=x?'none':'block';$('activeMeta').textContent=x?x.img.naturalWidth+' × '+x.img.naturalHeight:'等待图片';$('selectionBox').style.display='none'}
+async function addFiles(list){for(const f of [...list].filter(f=>f.type.startsWith('image/'))){try{state.images.push(await loadImage(f))}catch(e){console.warn(e)}}if(state.images.length){if(state.images.length===list.length)state.active=0;renderSources();showActive();drawPoster()}}
+$('files').addEventListener('change',e=>addFiles(e.target.files));$('add').onclick=()=>$('files').click();$('clear').onclick=()=>{state.images.forEach(x=>URL.revokeObjectURL(x.url));state.images=[];state.details=[];state.active=0;state.selection=null;renderSources();showActive();renderDetails();drawPoster()};
+$('sourceThumbs').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)setActive(Number(b.dataset.open))});
+function addCrop(img,box,label){const c=document.createElement('canvas');c.width=Math.max(1,Math.round(box.w*img.naturalWidth));c.height=Math.max(1,Math.round(box.h*img.naturalHeight));const ctx=c.getContext('2d');ctx.drawImage(img,Math.round(box.x*img.naturalWidth),Math.round(box.y*img.naturalHeight),c.width,c.height,0,0,c.width,c.height);state.details.push({url:c.toDataURL('image/jpeg',.94),label:label||'细节特写',source:state.active});renderDetails();drawPoster()}
+function renderDetails(){$('detailThumbs').innerHTML=state.details.map((d,i)=>'<div class="thumb"><img src="'+d.url+'" alt=""><div class="cap">'+esc(d.label)+'</div><button class="btn" data-remove="'+i+'">移除</button></div>').join('');$('detailStatus').textContent=state.details.length+' 张细节图';$('addAll').disabled=!state.images.length}
+$('detailThumbs').addEventListener('click',e=>{const b=e.target.closest('[data-remove]');if(b){state.details.splice(Number(b.dataset.remove),1);renderDetails();drawPoster()}});
+function pointerPos(e){const r=$('selection').getBoundingClientRect();return{x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
+let start=null;
+$('selection').addEventListener('pointerdown',e=>{if(!current()||state.mode!=='manual')return;start=pointerPos(e);$('selection').setPointerCapture(e.pointerId);state.selection={x:start.x,y:start.y,w:0,h:0};updateSelection()});
+$('selection').addEventListener('pointermove',e=>{if(!start)return;const p=pointerPos(e);state.selection={x:Math.min(start.x,p.x),y:Math.min(start.y,p.y),w:Math.abs(p.x-start.x),h:Math.abs(p.y-start.y)};updateSelection()});
+$('selection').addEventListener('pointerup',()=>{start=null});
+function updateSelection(){const b=state.selection;if(!b)return;const el=$('selectionBox');el.style.display='block';el.style.left=b.x*100+'%';el.style.top=b.y*100+'%';el.style.width=b.w*100+'%';el.style.height=b.h*100+'%';$('crop').disabled=b.w<.015||b.h<.015}
+$('crop').onclick=()=>{if(state.selection&&current())addCrop(current().img,state.selection,'手动细节 '+(state.details.length+1))};
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));$('autoPanel').classList.toggle('hidden',state.mode!=='auto');$('manualPanel').classList.toggle('hidden',state.mode!=='manual')}));
+$('clearDetails').onclick=()=>{state.details=[];renderDetails();drawPoster()};
+$('addAll').onclick=()=>{if(!state.images.length)return;const x=current();const boxes=[{x:.05,y:.05,w:.34,h:.28,l:'面料纹理'},{x:.57,y:.05,w:.36,h:.27,l:'局部工艺'},{x:.04,y:.57,w:.38,h:.35,l:'服装结构'},{x:.58,y:.58,w:.37,h:.34,l:'细节特写'}];boxes.forEach(b=>addCrop(x.img,{x:b.x,y:b.y,w:b.w,h:b.h},b.l));};
+function fileData(img){const c=document.createElement('canvas');const scale=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight));c.width=Math.round(img.naturalWidth*scale);c.height=Math.round(img.naturalHeight*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const u=c.toDataURL('image/jpeg',.88);return{mimeType:'image/jpeg',data:u.split(',')[1]}}
+$('analyze').onclick=async()=>{const x=current(),key=$('apiKey').value.trim(),base=$('apiBase').value.trim().replace(/\/$/,''),model=$('apiModel').value.trim();if(!x)return;if(!key||!base){$('aiStatus').textContent='请填写 API Base URL 和 API Key。';return}const btn=$('analyze');btn.disabled=true;$('aiStatus').textContent='正在分析图片…';try{const data=fileData(x.img);const prompt='分析这张服装商品照片，只识别图中真实可见的服装局部细节。返回严格 JSON，不要 Markdown，格式为 {"items":[{"label":"面料纹理","x":0.1,"y":0.1,"w":0.2,"h":0.2}]}。坐标为相对整张图片的 0 到 1 归一化值，x/y 是左上角，w/h 是宽高。最多给出 6 个有价值的区域，优先面料纹理、领口、袖口、蕾丝/刺绣、纽扣/装饰、接缝/结构。区域必须落在图像范围内，避免重复，不要猜测不可见内容。';const res=await fetch(base+'/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:data.mimeType,data:data.data}}]}],generationConfig:{responseMimeType:'application/json',temperature:.2}})});if(!res.ok)throw new Error('API '+res.status+'：'+(await res.text()).slice(0,260));const json=await res.json();const raw=json.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';const parsed=JSON.parse(raw.replace(/^```json|^```|\```$/g,'').trim());const items=(parsed.items||[]).slice(0,6).filter(b=>[b.x,b.y,b.w,b.h].every(Number.isFinite)&&b.w>.02&&b.h>.02&&b.x>=0&&b.y>=0&&b.x+b.w<=1.001&&b.y+b.h<=1.001);state.suggestions=items;$('aiStatus').textContent='识别到 '+items.length+' 个可见细节区域。点击“添加建议细节”加入海报。';$('addAll').disabled=!items.length;$('addAll').textContent='添加 AI 建议细节 ('+items.length+')';$('addAll').onclick=()=>{items.forEach(b=>addCrop(x.img,{x:b.x,y:b.y,w:b.w,h:b.h},b.label||'AI 细节'));$('addAll').disabled=true}}catch(e){$('aiStatus').textContent='分析失败：'+e.message+'。可切换手动模式继续使用。'}finally{btn.disabled=false}};
+function drawPoster(){const c=$('poster'),ctx=c.getContext('2d'),W=c.width,H=c.height,bg=$('paper').value;ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);const dark=bg==='#202a33';const ink=dark?'#f4f3ef':'#242a30',muted=dark?'#c3cbd0':'#6f7880';ctx.fillStyle=ink;ctx.font='bold 43px Georgia,serif';ctx.fillText(($('brandName').value||'NALAN').slice(0,28),72,88);ctx.fillStyle=muted;ctx.font='16px Arial,sans-serif';ctx.fillText(($('subTitle').value||'FASHION DETAILS').slice(0,55).toUpperCase(),74,119);ctx.strokeStyle=dark?'#64717b':'#cbd1d5';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(72,143);ctx.lineTo(W-72,143);ctx.stroke();const main=current();const layout=$('layout').value;let mx=layout==='minimal'?220:240,my=layout==='minimal'?190:205,mw=layout==='minimal'?760:720,mh=layout==='minimal'?1050:1040;if(main){const im=main.img,ratio=Math.min(mw/im.naturalWidth,mh/im.naturalHeight),dw=im.naturalWidth*ratio,dh=im.naturalHeight*ratio;ctx.save();ctx.translate(mx+(mw-dw)/2,my+(mh-dh)/2);ctx.shadowColor='#0002';ctx.shadowBlur=18;ctx.shadowOffsetY=8;ctx.drawImage(im,0,0,dw,dh);ctx.restore()}else{ctx.fillStyle='#e3e6e8';ctx.fillRect(mx,my,mw,mh)}const positions=layout==='minimal'?[]:layout==='balanced'?[{x:62,y:250,w:205,h:220},{x:930,y:260,w:205,h:220},{x:62,y:1050,w:205,h:220},{x:930,y:1060,w:205,h:220},{x:850,y:720,w:245,h:240}]:[{x:55,y:255,w:205,h:210},{x:915,y:205,w:225,h:215},{x:45,y:1010,w:225,h:220},{x:925,y:1030,w:210,h:225},{x:820,y:700,w:245,h:250},{x:95,y:700,w:180,h:190}];state.details.slice(0,positions.length).forEach((d,i)=>{const p=positions[i],im=new Image();im.onload=()=>{ctx.save();ctx.translate(p.x+p.w/2,p.y+p.h/2);ctx.rotate((i%2?1:-1)*.025);ctx.fillStyle='#fff';ctx.shadowColor='#0003';ctx.shadowBlur=16;ctx.shadowOffsetY=6;ctx.fillRect(-p.w/2-9,-p.h/2-9,p.w+18,p.h+18);ctx.shadowColor='transparent';const r=Math.min(p.w/im.width,p.h/im.height);ctx.drawImage(im,-im.width*r/2,-im.height*r/2,im.width*r,im.height*r);ctx.restore();if($('showLabels').checked){ctx.fillStyle=muted;ctx.font='13px Arial';ctx.fillText(String(i+1).padStart(2,'0')+' / '+d.label.slice(0,18),p.x,p.y+p.h+28)}};im.src=d.url});ctx.fillStyle=ink;ctx.font='17px Georgia,serif';ctx.fillText('DESIGNED TO BE NOTICED',72,H-88);ctx.fillStyle=muted;ctx.font='12px Arial';ctx.fillText('MATERIAL · TEXTURE · CRAFTSMANSHIP',72,H-62);ctx.fillText('NALAN STUDIO  /  '+new Date().getFullYear(),W-330,H-62)}
+['brandName','subTitle','layout','paper','showLabels'].forEach(id=>$(id).addEventListener('input',drawPoster));$('refresh').onclick=drawPoster;
+$('export').onclick=()=>{const src=$('poster'),out=document.createElement('canvas');out.width=2400;out.height=3000;out.getContext('2d').drawImage(src,0,0,out.width,out.height);out.toBlob(blob=>{if(!blob)return;const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='nalan-fashion-breakdown.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);$('exportStatus').textContent='海报已生成并下载（2400 × 3000）'},'image/png')};
+$('rememberEndpoint').onchange=()=>{if($('rememberEndpoint').checked)localStorage.setItem('nalan-fashion-api',JSON.stringify({base:$('apiBase').value,model:$('apiModel').value}));else localStorage.removeItem('nalan-fashion-api')};
+try{const saved=JSON.parse(localStorage.getItem('nalan-fashion-api')||'null');if(saved){$('apiBase').value=saved.base||'';$('apiModel').value=saved.model||'gemini-2.5-flash';$('rememberEndpoint').checked=true}}catch(e){}
+renderSources();renderDetails();showActive();drawPoster();
+})();
+</script>
+</body></html>
