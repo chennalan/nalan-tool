@@ -147,7 +147,7 @@ const WPOSTER=1200;
 function posterSize(){const v=activeOutputPreset;return v==='detail'?{h:1600,pw:1500,ph:2000}:v==='social'?{h:2133,pw:1080,ph:1920}:v==='square'?{h:1200,pw:1600,ph:1600}:{h:1500,pw:2400,ph:3000}}
 function posterDefaults(layout,count){
  const H=posterSize().h,top=180,footer=H-145,available=footer-top;
- const cols=layout==='ecommerce'?2:layout==='social'?3:(count>6?3:count>2?2:1);
+ const cols=layout==='bottom'?5:layout==='ecommerce'?2:layout==='social'?3:(count>6?3:count>2?2:1);
  const rows=Math.ceil(count/Math.max(1,cols)),gap=18,labelSpace=$('showLabels').checked?30:8;
  const detailBlock=count?Math.min(available*.48,rows*155+Math.max(0,rows-1)*gap):0;
  const mainH=Math.max(220,available-detailBlock-(count?34:0));
