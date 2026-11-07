@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 const MODEL_ID='studioludens/birefnet-lite-512';
-const MAX_FILE=25*1024*1024,MAX_EDGE=6000,MAX_PIXELS=20000000;
+const MAX_FILE=25*1024*1024,MAX_EDGE=6000,MAX_PIXELS=12000000;
 let model=null,processor=null,RawImage=null,source=null,sourceName='product',maskCanvas=null,busy=false,device='wasm';
 const setStatus=s=>{$('aiStatus').textContent=s};
 function setBusy(v){busy=v;$('aiLoad').disabled=v||!!model;$('aiRun').disabled=v||!model||!source;$('aiPng').disabled=v||!maskCanvas;$('aiJpg').disabled=v||!maskCanvas;$('aiFile').disabled=v}
