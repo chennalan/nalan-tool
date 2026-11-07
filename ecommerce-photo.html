@@ -7,12 +7,14 @@
 <link rel="stylesheet" href="css/dark-mode.css"><script src="js/dark-mode.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-:root{color-scheme:light dark}body{background:var(--page-bg,#f1f5f9)}.panel{background:var(--panel,#fff);border:1px solid var(--line,#e2e8f0);border-radius:16px}.muted{color:var(--muted,#64748b)}.field{width:100%;border:1px solid var(--line,#cbd5e1);border-radius:9px;padding:9px;background:transparent;color:inherit}.btn{border:1px solid var(--line,#cbd5e1);border-radius:10px;padding:9px 12px;font-size:13px}.primary{background:#2563eb;color:white;border-color:#2563eb}.thumb{border:1px solid var(--line,#cbd5e1);border-radius:10px;padding:7px;text-align:left;min-width:0}.thumb.active{outline:2px solid #3b82f6}.thumb img{width:100%;height:78px;object-fit:contain;background:#e2e8f0;border-radius:6px}.thumb span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;margin-top:5px}.checker{background-color:#f8fafc;background-image:linear-gradient(45deg,#e2e8f0 25%,transparent 25%),linear-gradient(-45deg,#e2e8f0 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e2e8f0 75%),linear-gradient(-45deg,transparent 75%,#e2e8f0 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}.preview canvas{max-width:100%;max-height:66vh;object-fit:contain}.range{width:100%;accent-color:#2563eb}label{font-size:12px;font-weight:600}.status{min-height:22px;font-size:12px}.disabled{opacity:.45;pointer-events:none}
+:root{color-scheme:light;--page-bg:#f8fafc;--panel:#fff;--line:#e2e8f0;--muted:#64748b;--ui-text:#1e293b}
+html[data-theme="dark"]{color-scheme:dark;--page-bg:#0b1120;--panel:#111827;--line:#374151;--muted:#9ca3af;--ui-text:#e5e7eb}
+body{background:var(--page-bg);color:var(--ui-text)}.panel{background:var(--panel,#fff);border:1px solid var(--line,#e2e8f0);border-radius:16px}.muted{color:var(--muted,#64748b)}.field{width:100%;border:1px solid var(--line,#cbd5e1);border-radius:9px;padding:9px;background:transparent;color:inherit}.btn{border:1px solid var(--line,#cbd5e1);border-radius:10px;padding:9px 12px;font-size:13px}.primary{background:#2563eb;color:white;border-color:#2563eb}.thumb{border:1px solid var(--line,#cbd5e1);border-radius:10px;padding:7px;text-align:left;min-width:0}.thumb.active{outline:2px solid #3b82f6}.thumb img{width:100%;height:78px;object-fit:contain;background:#e2e8f0;border-radius:6px}.thumb span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;margin-top:5px}.checker{background-color:#f8fafc;background-image:linear-gradient(45deg,#e2e8f0 25%,transparent 25%),linear-gradient(-45deg,#e2e8f0 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e2e8f0 75%),linear-gradient(-45deg,transparent 75%,#e2e8f0 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}.preview canvas{max-width:100%;max-height:66vh;object-fit:contain}.range{width:100%;accent-color:#2563eb}label{font-size:12px;font-weight:600}.status{min-height:22px;font-size:12px}.disabled{opacity:.45;pointer-events:none}
 @media(prefers-color-scheme:dark){.checker{background-color:#111827;background-image:linear-gradient(45deg,#1f2937 25%,transparent 25%),linear-gradient(-45deg,#1f2937 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1f2937 75%),linear-gradient(-45deg,transparent 75%,#1f2937 75%)}}
 </style>
 </head>
-<body class="min-h-screen text-slate-800 dark:text-slate-100">
-<header class="sticky top-0 z-20 border-b border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 backdrop-blur">
+<body class="min-h-screen">
+<header class="site-header sticky top-0 z-20 border-b border-slate-200 backdrop-blur">
 <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3"><a href="index.html" class="text-sm font-semibold">← 纳兰工具箱</a><div class="text-right"><div class="font-bold">电商图片处理中心</div><div class="text-[11px] muted">本地处理 · 原图不覆盖 · 不上传图片</div></div></div>
 </header>
 <main class="max-w-7xl mx-auto p-3 md:p-5 space-y-4">
@@ -23,7 +25,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)_280px] gap-4">
 <aside class="panel p-4 space-y-3">
 <div class="flex justify-between items-center"><h2 class="font-bold">图片队列</h2><span id="count" class="text-xs muted">0 张</span></div>
-<div id="drop" class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-5 text-center text-xs muted">拖放图片到这里<br>或点击上方添加图片</div>
+<div id="drop" class="drop-zone border-2 border-dashed border-slate-300 rounded-xl p-5 text-center text-xs muted">拖放图片到这里<br>或点击上方添加图片</div>
 <div id="queue" class="grid grid-cols-3 gap-2 max-h-[55vh] overflow-auto"></div>
 <p class="text-[11px] muted">支持 JPG / PNG / WebP / GIF（GIF 按首帧处理）。建议单张不超过 25MB；批量任务逐张处理，降低内存占用。</p>
 </aside>
@@ -31,7 +33,7 @@
 <div class="flex flex-wrap items-center justify-between gap-2"><div><h2 class="font-bold">实时预览</h2><p id="meta" class="text-xs muted">请先添加图片</p></div><div class="flex gap-2"><button id="before" class="btn" disabled>查看原图</button><button id="reset" class="btn" disabled>重置单张</button></div></div>
 <div id="preview" class="checker rounded-xl min-h-[300px] flex items-center justify-center overflow-auto p-3"><div class="text-sm muted text-center">选择图片后显示处理预览</div></div>
 <div class="flex flex-wrap gap-2 items-center"><button id="downloadOne" class="btn primary" disabled>导出当前图片</button><button id="processAll" class="btn primary" disabled>批量处理并打包 ZIP</button><span id="progress" class="text-xs muted"></span></div>
-<div class="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden"><div id="bar" class="h-full bg-blue-600 w-0 transition-all"></div></div>
+<div class="progress-track h-2 rounded-full bg-slate-200 overflow-hidden"><div id="bar" class="h-full bg-blue-600 w-0 transition-all"></div></div>
 <div id="status" class="status muted" role="status">图片仅在当前浏览器中处理，不会上传。</div>
 </section>
 <aside class="panel p-4 space-y-4">
@@ -45,7 +47,7 @@
 <div class="space-y-2"><label for="quality">压缩质量 <output id="qualityVal">92%</output></label><input id="quality" class="range" type="range" min="50" max="100" value="92"></div>
 <label class="flex items-center gap-2"><input id="white" type="checkbox"> 导出时使用白色底色（透明区域）</label>
 <div class="flex gap-2"><button id="applyAll" class="btn flex-1" disabled>参数应用到全部</button><button id="resetAll" class="btn flex-1" disabled>全部重置</button></div>
-<div class="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 p-3 text-[11px] text-emerald-800 dark:text-emerald-200">🔒 隐私说明：文件读取、画布处理和导出均在本机浏览器完成。页面不会调用图片上传、云存储或外部 AI API。</div>
+<div class="privacy-note rounded-lg bg-emerald-50 p-3 text-[11px] text-emerald-800">🔒 隐私说明：文件读取、画布处理和导出均在本机浏览器完成。页面不会调用图片上传、云存储或外部 AI API。</div>
 </aside>
 </div>
 </main>
