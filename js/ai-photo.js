@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 const MODEL_ID='studioludens/birefnet-lite-512';
-const MAX_FILE=25*1024*1024,MAX_EDGE=6000,MAX_PIXELS=36000000;
+const MAX_FILE=25*1024*1024,MAX_EDGE=6000,MAX_PIXELS=20000000;
 let model=null,processor=null,RawImage=null,source=null,sourceName='product',maskCanvas=null,busy=false,device='wasm';
 const setStatus=s=>{$('aiStatus').textContent=s};
 function setBusy(v){busy=v;$('aiLoad').disabled=v||!!model;$('aiRun').disabled=v||!model||!source;$('aiPng').disabled=v||!maskCanvas;$('aiJpg').disabled=v||!maskCanvas;$('aiFile').disabled=v}
@@ -50,7 +50,7 @@ $('aiLoad').addEventListener('click',async()=>{
 $('aiRun').addEventListener('click',async()=>{
  if(!model||!source||busy)return;setBusy(true);setStatus('正在分析商品主体…图片不会离开浏览器。');
  try{
-  const image=RawImage.fromCanvas(source);
+  const image=RawImage.fromCanvas(source).rgb();
   const {pixel_values}=await processor(image);
   const result=await model({input_image:pixel_values});
   const logits=result.logits||result.output_image;
