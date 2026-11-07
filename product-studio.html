@@ -137,9 +137,9 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.query
 $('wmOpacity').addEventListener('input',labels);$('wmSize').addEventListener('input',labels);$('outQuality').addEventListener('input',labels);
 $('detailWidth').onchange=()=>{$('detailCustomW').disabled=$('detailWidth').value!=='custom'};
 async function buildDetail(){if(!state.items.length)return;const width=$('detailWidth').value==='custom'?clamp(+$('detailCustomW').value||750,320,1600):+$('detailWidth').value,gap=clamp(+$('detailGap').value||0,0,80),layout=$('layout').value,bg=$('detailBg').value,title=$('detailTitle').value,subtitle=$('detailSubtitle').value;
- const imgs=[];for(const item of state.items){const im=await loadImage(item.url);imgs.push({im,item})}
+ const imgs=[];for(const item of state.items){const im=await drawBase(item,item.settings);await drawWatermark(im,item.settings);imgs.push({im,item,w:im.width,h:im.height})}
  const headerH=layout==='story'?Math.round(width*.48):Math.round(width*.12),cellW=layout==='grid2'||layout==='hero'?Math.floor((width-gap*3)/2):width-gap*2;
- const heights=imgs.map((o,i)=>{if(layout==='grid2'||(layout==='hero'&&i>0))return cellW*o.im.naturalHeight/o.im.naturalWidth;return (width-gap*2)*o.im.naturalHeight/o.im.naturalWidth});
+ const heights=imgs.map((o,i)=>{if(layout==='grid2'||(layout==='hero'&&i>0))return cellW*o.h/o.w;return (width-gap*2)*o.im.naturalHeight/o.im.naturalWidth});
  let total=gap+headerH+gap; if(layout==='grid2'||layout==='hero'){for(let i=0;i<imgs.length;i+=2)total+=Math.max(heights[i]||0,heights[i+1]||0)+gap}else total+=heights.reduce((a,b)=>a+b+gap,0);
  total=Math.min(30000,Math.ceil(total));const c=document.createElement('canvas');c.width=width;c.height=total;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,width,total);let y=gap;
  if(title||subtitle){x.fillStyle=bg==='#171717'?'#fff':'#262626';x.textAlign='center';x.font='600 '+Math.round(width*.04)+'px Arial,sans-serif';x.fillText(title,width/2,y+headerH*.42,width-gap*2);x.globalAlpha=.72;x.font=' '+Math.round(width*.022)+'px Arial,sans-serif';x.fillText(subtitle,width/2,y+headerH*.68,width-gap*2);x.globalAlpha=1}y+=headerH+gap;
